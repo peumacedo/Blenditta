@@ -34,6 +34,7 @@ Base inicial do MVP web para fechamento financeiro mensal com Next.js, TypeScrip
    npm run prisma:seed
    ```
 7. Rode o projeto:
+5. Rode o projeto:
    ```bash
    npm run dev
    ```
@@ -60,3 +61,5 @@ Base inicial do MVP web para fechamento financeiro mensal com Next.js, TypeScrip
 - `inconsistencias`
 
 As relações são centralizadas em `fechamentos`, permitindo evolução futura do dashboard e da conciliação financeira.
+- `npm run prisma:migrate:dev`: criar/aplicar migrations
+- `npm run prisma:studio`: abrir Prisma Studio

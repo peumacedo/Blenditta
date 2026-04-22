@@ -114,4 +114,10 @@ model Inconsistencia {
 
   @@index([fechamentoId, status])
   @@map("inconsistencias")
+model MonthlyClosing {
+  id          String   @id @default(cuid())
+  reference   DateTime
+  status      String   @default("draft")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
