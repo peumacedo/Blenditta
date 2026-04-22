@@ -1,0 +1,118 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum FechamentoStatus {
+  EM_PREPARACAO
+  PROCESSANDO
+  EM_REVISAO
+  FECHADO
+}
+
+enum SituacaoConta {
+  PENDENTE
+  PAGO
+  RECEBIDO
+  ATRASADO
+  CANCELADO
+}
+
+enum InconsistenciaStatus {
+  ABERTA
+  EM_ANALISE
+  RESOLVIDA
+}
+
+model Fechamento {
+  id             Int                  @id @default(autoincrement())
+  competencia    String
+  status         FechamentoStatus
+  observacoes    String?
+  createdAt      DateTime             @default(now()) @map("created_at")
+  updatedAt      DateTime             @updatedAt @map("updated_at")
+  arquivos       Arquivo[]
+  extratos       ExtratoBancario[]
+  contasPagar    ContaPagar[]
+  contasReceber  ContaReceber[]
+  inconsistencias Inconsistencia[]
+
+  @@map("fechamentos")
+}
+
+model Arquivo {
+  id           Int       @id @default(autoincrement())
+  fechamentoId Int       @map("fechamento_id")
+  nome         String
+  tipo         String
+  caminho      String
+  criadoEm     DateTime  @default(now()) @map("criado_em")
+  fechamento   Fechamento @relation(fields: [fechamentoId], references: [id], onDelete: Cascade)
+
+  @@index([fechamentoId])
+  @@map("arquivos")
+}
+
+model ExtratoBancario {
+  id           Int       @id @default(autoincrement())
+  fechamentoId Int       @map("fechamento_id")
+  data         DateTime
+  descricao    String
+  valor        Decimal
+  saldo        Decimal
+  categoria    String
+  conciliado   Boolean   @default(false)
+  fechamento   Fechamento @relation(fields: [fechamentoId], references: [id], onDelete: Cascade)
+
+  @@index([fechamentoId, data])
+  @@map("extrato_bancario")
+}
+
+model ContaPagar {
+  id           Int          @id @default(autoincrement())
+  fechamentoId Int          @map("fechamento_id")
+  fornecedor   String
+  vencimento   DateTime
+  pagamento    DateTime?
+  valor        Decimal
+  categoria    String
+  situacao     SituacaoConta
+  fechamento   Fechamento   @relation(fields: [fechamentoId], references: [id], onDelete: Cascade)
+
+  @@index([fechamentoId, vencimento])
+  @@map("contas_pagar")
+}
+
+model ContaReceber {
+  id           Int          @id @default(autoincrement())
+  fechamentoId Int          @map("fechamento_id")
+  cliente      String
+  vencimento   DateTime
+  recebimento  DateTime?
+  valor        Decimal
+  categoria    String
+  situacao     SituacaoConta
+  fechamento   Fechamento   @relation(fields: [fechamentoId], references: [id], onDelete: Cascade)
+
+  @@index([fechamentoId, vencimento])
+  @@map("contas_receber")
+}
+
+model Inconsistencia {
+  id           Int                  @id @default(autoincrement())
+  fechamentoId Int                  @map("fechamento_id")
+  tipo         String
+  data         DateTime
+  descricao    String
+  valor        Decimal
+  status       InconsistenciaStatus
+  observacao   String?
+  fechamento   Fechamento           @relation(fields: [fechamentoId], references: [id], onDelete: Cascade)
+
+  @@index([fechamentoId, status])
+  @@map("inconsistencias")
+}

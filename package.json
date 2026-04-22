@@ -1,0 +1,16 @@
+{
+  "name": "blenditta",
+  "version": "1.0.0",
+  "description": "MVP de fechamento mensal Blenditta",
+  "main": "index.js",
+  "type": "commonjs",
+  "scripts": {
+    "migrate": "prisma migrate dev --name init",
+    "seed": "prisma db seed",
+    "lint": "prisma validate",
+    "build": "prisma generate"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.js"
+  }
+}
