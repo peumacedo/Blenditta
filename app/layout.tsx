@@ -18,6 +18,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR">
+      <body className="font-sans">
       <body className={inter.className}>
         <AppShell>{children}</AppShell>
       </body>
