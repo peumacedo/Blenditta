@@ -1,4 +1,4 @@
-import { FechamentoStatus } from "@prisma/client";
+import { FechamentoStatus, SituacaoConta } from "@prisma/client";
 
 export const fechamentoStatusLabel: Record<FechamentoStatus, string> = {
   EM_PREPARACAO: "Em preparação",
@@ -36,4 +36,26 @@ export function formatCurrency(value: number) {
     style: "currency",
     currency: "BRL"
   }).format(value);
+}
+
+
+export const situacaoContaLabel: Record<SituacaoConta, string> = {
+  PENDENTE: "Pendente",
+  PAGO: "Pago",
+  RECEBIDO: "Recebido",
+  VENCIDO: "Vencido"
+};
+
+export function formatDate(date: Date) {
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short"
+  }).format(date);
+}
+
+export function formatCategoryLabel(value: string) {
+  return value
+    .replace(/_/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/(^|\s)\S/g, (char) => char.toUpperCase());
 }
