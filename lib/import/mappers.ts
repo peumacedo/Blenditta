@@ -1,7 +1,7 @@
 import { SituacaoConta } from "@prisma/client";
 
-import { isEmptyRow, normalizeHeader } from "@/lib/import/parsers";
-import { type GenericRow, type MapResult } from "@/lib/import/types";
+import { isEmptyRow, normalizeHeader } from "./parsers.ts";
+import { type GenericRow, type MapResult } from "./types.ts";
 
 type HeaderMap = Record<string, string | undefined>;
 
@@ -38,31 +38,53 @@ type ContaReceberCreateInput = {
 
 const extratoSchema: ColumnSchema[] = [
   { field: "data", aliases: ["data", "dt"] },
-  { field: "descricao", aliases: ["descricao", "descrição", "historico", "histórico", "historico_lancamento"] },
-  { field: "valor", aliases: ["valor", "vl", "valor_r$", "valor_r"] },
-  { field: "saldo", aliases: ["saldo", "saldo_atual"] },
-  { field: "categoria", aliases: ["categoria", "tipo", "grupo"] }
+  {
+    field: "descricao",
+    aliases: [
+      "cliente_ou_fornecedor",
+      "observacoes",
+      "observacao",
+      "documento",
+      "tipo_de_documento",
+      "descricao",
+      "descricao",
+      "historico",
+      "historico_lancamento"
+    ]
+  },
+  { field: "valor", aliases: ["valor_r$", "valor_r", "valor", "vl"] },
+  { field: "saldo", aliases: ["saldo_r$", "saldo_r", "saldo", "saldo_atual"] },
+  { field: "categoria", aliases: ["categoria", "tipo", "grupo"] },
+  { field: "situacao", aliases: ["situacao", "status"] },
+  { field: "observacoes", aliases: ["observacoes", "observacao"] },
+  { field: "documento", aliases: ["documento", "numero_do_documento"] },
+  { field: "tipo_documento", aliases: ["tipo_de_documento"] }
 ];
 
 const contasPagarSchema: ColumnSchema[] = [
-  { field: "fornecedor", aliases: ["fornecedor", "favorecido"] },
+  { field: "fornecedor", aliases: ["fornecedor_nome_fantasia", "fornecedor_razao_social", "fornecedor", "favorecido"] },
   { field: "vencimento", aliases: ["vencimento", "dt_vencimento", "data_vencimento"] },
-  { field: "pagamento", aliases: ["pagamento", "dt_pagamento", "data_pagamento"] },
-  { field: "valor", aliases: ["valor", "vl", "valor_r$", "valor_r"] },
+  { field: "pagamento", aliases: ["ultimo_pagamento", "pagamento", "dt_pagamento", "data_pagamento", "previsao_de_pagamento"] },
+  { field: "valor", aliases: ["valor_da_conta", "valor_a_pagar", "valor_liquido", "valor", "vl", "valor_r$", "valor_r"] },
   { field: "categoria", aliases: ["categoria", "tipo", "grupo"] },
-  { field: "situacao", aliases: ["situacao", "situação", "status"] }
+  { field: "situacao", aliases: ["situacao", "status"] }
 ];
 
 const contasReceberSchema: ColumnSchema[] = [
-  { field: "cliente", aliases: ["cliente", "sacado"] },
+  { field: "cliente", aliases: ["cliente_nome_fantasia", "cliente_razao_social", "cliente", "sacado"] },
   { field: "vencimento", aliases: ["vencimento", "dt_vencimento", "data_vencimento"] },
-  { field: "recebimento", aliases: ["recebimento", "dt_recebimento", "data_recebimento"] },
-  { field: "valor", aliases: ["valor", "vl", "valor_r$", "valor_r"] },
+  {
+    field: "recebimento",
+    aliases: ["ultimo_recebimento", "recebimento", "dt_recebimento", "data_recebimento", "previsao_de_recebimento"]
+  },
+  { field: "valor", aliases: ["valor_da_conta", "valor_a_receber", "valor_liquido", "valor", "vl", "valor_r$", "valor_r"] },
   { field: "categoria", aliases: ["categoria", "tipo", "grupo"] },
-  { field: "situacao", aliases: ["situacao", "situação", "status"] }
+  { field: "situacao", aliases: ["situacao", "status"] }
 ];
 
-function parseDate(value: string): Date | null {
+const OPENING_BALANCE_PATTERNS = [/^saldo$/i, /saldo[_\s]*anterior/i, /saldo[_\s]*inicial/i, /abertura/i, /total/i];
+
+export function parseDate(value: string): Date | null {
   const normalized = value.trim();
   if (!normalized) return null;
 
@@ -90,7 +112,7 @@ function parseDate(value: string): Date | null {
   return Number.isNaN(native.getTime()) ? null : native;
 }
 
-function parseNumber(value: string): number | null {
+export function parseNumber(value: string): number | null {
   const normalized = value
     .replace(/R\$/gi, "")
     .replace(/\s+/g, "")
@@ -114,27 +136,20 @@ function parseNumber(value: string): number | null {
   return negative ? -parsed : parsed;
 }
 
-function parseSituacao(raw: string): SituacaoConta {
-  const normalized = normalizeHeader(raw);
-
-  if (normalized.includes("receb")) return SituacaoConta.RECEBIDO;
-  if (normalized.includes("pag")) return SituacaoConta.PAGO;
-  if (normalized.includes("venc")) return SituacaoConta.VENCIDO;
-
-  return SituacaoConta.PENDENTE;
-}
-
 function resolveColumns(headers: string[], schema: ColumnSchema[]): { headerMap: HeaderMap; unrecognizedColumns: string[] } {
-  const normalizedHeaders = headers.map((header) => normalizeHeader(header));
+  const normalizedLookup = new Map(headers.map((header) => [normalizeHeader(header), header]));
   const known = new Set<string>();
 
   const headerMap = schema.reduce<HeaderMap>((acc, column) => {
-    const index = normalizedHeaders.findIndex((header) => column.aliases.map(normalizeHeader).includes(header));
-    if (index >= 0) {
-      const source = headers[index];
-      acc[column.field] = source;
-      known.add(source);
+    for (const alias of column.aliases) {
+      const source = normalizedLookup.get(normalizeHeader(alias));
+      if (source) {
+        acc[column.field] = source;
+        known.add(source);
+        break;
+      }
     }
+
     return acc;
   }, {});
 
@@ -147,24 +162,76 @@ function getCellValue(row: GenericRow, header?: string) {
   return String(row[header] ?? "").trim();
 }
 
+function firstNonEmpty(row: GenericRow, ...headers: Array<string | undefined>) {
+  for (const header of headers) {
+    const value = getCellValue(row, header);
+    if (value) return value;
+  }
+  return "";
+}
+
+function shouldIgnoreExtratoRow(row: GenericRow, headerMap: HeaderMap): boolean {
+  const description = firstNonEmpty(row, headerMap.descricao, headerMap.observacoes, headerMap.documento, headerMap.tipo_documento);
+  const normalized = normalizeHeader(description);
+
+  return OPENING_BALANCE_PATTERNS.some((pattern) => pattern.test(normalized));
+}
+
+function parseContaPagarSituacao(raw: string, warnings: string[]): SituacaoConta {
+  const normalized = normalizeHeader(raw);
+  if (normalized === "pago") return SituacaoConta.PAGO;
+  if (normalized === "atrasado" || normalized === "vencido") return SituacaoConta.VENCIDO;
+  if (normalized === "cancelado") {
+    warnings.push('Situação "Cancelado" em contas a pagar convertida para PENDENTE.');
+    return SituacaoConta.PENDENTE;
+  }
+
+  if (normalized && normalized !== "pendente") {
+    warnings.push(`Situação "${raw}" em contas a pagar convertida para PENDENTE.`);
+  }
+
+  return SituacaoConta.PENDENTE;
+}
+
+function parseContaReceberSituacao(raw: string, warnings: string[]): SituacaoConta {
+  const normalized = normalizeHeader(raw);
+  if (normalized === "recebido") return SituacaoConta.RECEBIDO;
+  if (normalized === "atrasado" || normalized === "vencido") return SituacaoConta.VENCIDO;
+  if (normalized === "cancelado") {
+    warnings.push('Situação "Cancelado" em contas a receber convertida para PENDENTE.');
+    return SituacaoConta.PENDENTE;
+  }
+
+  if (normalized && normalized !== "pendente") {
+    warnings.push(`Situação "${raw}" em contas a receber convertida para PENDENTE.`);
+  }
+
+  return SituacaoConta.PENDENTE;
+}
+
 export function mapExtratoRows(rows: GenericRow[], headers: string[]): MapResult<ExtratoCreateInput> {
   const warnings: string[] = [];
   const { headerMap, unrecognizedColumns } = resolveColumns(headers, extratoSchema);
 
-  if (!headerMap.saldo) {
-    warnings.push("Coluna de saldo não encontrada no extrato; saldo padrão 0 aplicado.");
-  }
+  if (!headerMap.data) warnings.push("Coluna essencial não encontrada no extrato: Data.");
+  if (!headerMap.valor) warnings.push("Coluna essencial não encontrada no extrato: Valor (R$).");
+  if (!headerMap.descricao) warnings.push("Coluna de descrição principal não encontrada no extrato; fallback será tentado.");
+  if (!headerMap.saldo) warnings.push("Coluna de saldo não encontrada no extrato; saldo padrão 0 aplicado.");
+  if (!headerMap.categoria) warnings.push("Coluna de categoria não encontrada no extrato; categoria padrão SEM_CATEGORIA aplicada.");
 
-  if (!headerMap.categoria) {
-    warnings.push("Coluna de categoria não encontrada no extrato; categoria padrão SEM_CATEGORIA aplicada.");
-  }
+  let ignoredByOpeningBalance = 0;
 
   const data = rows.reduce<ExtratoCreateInput[]>((acc, row) => {
     if (isEmptyRow(row)) return acc;
 
+    if (shouldIgnoreExtratoRow(row, headerMap)) {
+      ignoredByOpeningBalance += 1;
+      return acc;
+    }
+
     const parsedDate = parseDate(getCellValue(row, headerMap.data));
     const parsedValue = parseNumber(getCellValue(row, headerMap.valor));
-    const descricao = getCellValue(row, headerMap.descricao);
+    const descricao = firstNonEmpty(row, headerMap.descricao, headerMap.observacoes, headerMap.documento, headerMap.tipo_documento);
 
     if (!parsedDate || parsedValue === null || !descricao) {
       return acc;
@@ -181,6 +248,10 @@ export function mapExtratoRows(rows: GenericRow[], headers: string[]): MapResult
     return acc;
   }, []);
 
+  if (ignoredByOpeningBalance > 0) {
+    warnings.push(`${ignoredByOpeningBalance} linha(s) de extrato ignorada(s) por saldo inicial/anterior/totalização.`);
+  }
+
   const ignoredRows = rows.filter((row) => !isEmptyRow(row)).length - data.length;
 
   return { data, ignoredRows: Math.max(0, ignoredRows), warnings, unrecognizedColumns };
@@ -190,13 +261,10 @@ export function mapContasPagarRows(rows: GenericRow[], headers: string[]): MapRe
   const warnings: string[] = [];
   const { headerMap, unrecognizedColumns } = resolveColumns(headers, contasPagarSchema);
 
-  if (!headerMap.fornecedor) {
-    warnings.push("Coluna de fornecedor não encontrada em contas a pagar; valor padrão NAO_INFORMADO aplicado.");
-  }
-
-  if (!headerMap.categoria) {
-    warnings.push("Coluna de categoria não encontrada em contas a pagar; categoria padrão SEM_CATEGORIA aplicada.");
-  }
+  if (!headerMap.vencimento) warnings.push("Coluna essencial não encontrada em contas a pagar: Vencimento.");
+  if (!headerMap.valor) warnings.push("Coluna essencial não encontrada em contas a pagar: Valor.");
+  if (!headerMap.fornecedor) warnings.push("Coluna de fornecedor não encontrada em contas a pagar; valor padrão NAO_INFORMADO aplicado.");
+  if (!headerMap.categoria) warnings.push("Coluna de categoria não encontrada em contas a pagar; categoria padrão SEM_CATEGORIA aplicada.");
 
   const data = rows.reduce<ContaPagarCreateInput[]>((acc, row) => {
     if (isEmptyRow(row)) return acc;
@@ -214,7 +282,7 @@ export function mapContasPagarRows(rows: GenericRow[], headers: string[]): MapRe
       pagamento: parseDate(getCellValue(row, headerMap.pagamento)),
       valor,
       categoria: getCellValue(row, headerMap.categoria) || "SEM_CATEGORIA",
-      situacao: parseSituacao(getCellValue(row, headerMap.situacao) || "PENDENTE")
+      situacao: parseContaPagarSituacao(getCellValue(row, headerMap.situacao) || "PENDENTE", warnings)
     });
 
     return acc;
@@ -222,20 +290,17 @@ export function mapContasPagarRows(rows: GenericRow[], headers: string[]): MapRe
 
   const ignoredRows = rows.filter((row) => !isEmptyRow(row)).length - data.length;
 
-  return { data, ignoredRows: Math.max(0, ignoredRows), warnings, unrecognizedColumns };
+  return { data, ignoredRows: Math.max(0, ignoredRows), warnings: Array.from(new Set(warnings)), unrecognizedColumns };
 }
 
 export function mapContasReceberRows(rows: GenericRow[], headers: string[]): MapResult<ContaReceberCreateInput> {
   const warnings: string[] = [];
   const { headerMap, unrecognizedColumns } = resolveColumns(headers, contasReceberSchema);
 
-  if (!headerMap.cliente) {
-    warnings.push("Coluna de cliente não encontrada em contas a receber; valor padrão NAO_INFORMADO aplicado.");
-  }
-
-  if (!headerMap.categoria) {
-    warnings.push("Coluna de categoria não encontrada em contas a receber; categoria padrão SEM_CATEGORIA aplicada.");
-  }
+  if (!headerMap.vencimento) warnings.push("Coluna essencial não encontrada em contas a receber: Vencimento.");
+  if (!headerMap.valor) warnings.push("Coluna essencial não encontrada em contas a receber: Valor.");
+  if (!headerMap.cliente) warnings.push("Coluna de cliente não encontrada em contas a receber; valor padrão NAO_INFORMADO aplicado.");
+  if (!headerMap.categoria) warnings.push("Coluna de categoria não encontrada em contas a receber; categoria padrão SEM_CATEGORIA aplicada.");
 
   const data = rows.reduce<ContaReceberCreateInput[]>((acc, row) => {
     if (isEmptyRow(row)) return acc;
@@ -253,7 +318,7 @@ export function mapContasReceberRows(rows: GenericRow[], headers: string[]): Map
       recebimento: parseDate(getCellValue(row, headerMap.recebimento)),
       valor,
       categoria: getCellValue(row, headerMap.categoria) || "SEM_CATEGORIA",
-      situacao: parseSituacao(getCellValue(row, headerMap.situacao) || "PENDENTE")
+      situacao: parseContaReceberSituacao(getCellValue(row, headerMap.situacao) || "PENDENTE", warnings)
     });
 
     return acc;
@@ -261,5 +326,5 @@ export function mapContasReceberRows(rows: GenericRow[], headers: string[]): Map
 
   const ignoredRows = rows.filter((row) => !isEmptyRow(row)).length - data.length;
 
-  return { data, ignoredRows: Math.max(0, ignoredRows), warnings, unrecognizedColumns };
+  return { data, ignoredRows: Math.max(0, ignoredRows), warnings: Array.from(new Set(warnings)), unrecognizedColumns };
 }

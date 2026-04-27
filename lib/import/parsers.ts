@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
 
-import { type GenericRow, type ParsedFile, type ParsedTable } from "@/lib/import/types";
+import { type GenericRow, type ParsedFile, type ParsedTable } from "./types.ts";
 
 const execFileAsync = promisify(execFile);
 
@@ -19,7 +19,88 @@ function normalizeHeaderName(header: string) {
     .replace(/^_|_$/g, "");
 }
 
-function parseDelimitedText(content: string, delimiter = ","): ParsedTable {
+function splitDelimitedLine(line: string, delimiter: string): string[] {
+  const cells: string[] = [];
+  let current = "";
+  let insideQuotes = false;
+
+  for (let index = 0; index < line.length; index += 1) {
+    const char = line[index];
+
+    if (char === '"') {
+      if (insideQuotes && line[index + 1] === '"') {
+        current += '"';
+        index += 1;
+        continue;
+      }
+
+      insideQuotes = !insideQuotes;
+      continue;
+    }
+
+    if (char === delimiter && !insideQuotes) {
+      cells.push(current.trim());
+      current = "";
+      continue;
+    }
+
+    current += char;
+  }
+
+  cells.push(current.trim());
+  return cells;
+}
+
+function countDelimiterOutsideQuotes(line: string, delimiter: string): number {
+  let count = 0;
+  let insideQuotes = false;
+
+  for (let index = 0; index < line.length; index += 1) {
+    const char = line[index];
+
+    if (char === '"') {
+      if (insideQuotes && line[index + 1] === '"') {
+        index += 1;
+        continue;
+      }
+
+      insideQuotes = !insideQuotes;
+      continue;
+    }
+
+    if (char === delimiter && !insideQuotes) {
+      count += 1;
+    }
+  }
+
+  return count;
+}
+
+export function detectDelimiter(content: string): ";" | "," {
+  const lines = content
+    .replace(/^\uFEFF/, "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0)
+    .slice(0, 10);
+
+  if (lines.length === 0) {
+    return ",";
+  }
+
+  const delimiterCandidates: Array<";" | ","> = [";", ","];
+
+  const best = delimiterCandidates
+    .map((delimiter) => {
+      const score = lines.reduce((acc, line) => acc + countDelimiterOutsideQuotes(line, delimiter), 0);
+      return { delimiter, score };
+    })
+    .sort((a, b) => b.score - a.score)[0];
+
+  return best.score > 0 ? best.delimiter : ",";
+}
+
+function parseDelimitedText(content: string, delimiter: ";" | ","): ParsedTable {
   const lines = content
     .replace(/^\uFEFF/, "")
     .split(/\r?\n/)
@@ -30,43 +111,11 @@ function parseDelimitedText(content: string, delimiter = ","): ParsedTable {
     return { headers: [], rows: [] };
   }
 
-  const splitLine = (line: string) => {
-    const cells: string[] = [];
-    let current = "";
-    let insideQuotes = false;
-
-    for (let index = 0; index < line.length; index += 1) {
-      const char = line[index];
-
-      if (char === '"') {
-        if (insideQuotes && line[index + 1] === '"') {
-          current += '"';
-          index += 1;
-          continue;
-        }
-
-        insideQuotes = !insideQuotes;
-        continue;
-      }
-
-      if (char === delimiter && !insideQuotes) {
-        cells.push(current.trim());
-        current = "";
-        continue;
-      }
-
-      current += char;
-    }
-
-    cells.push(current.trim());
-    return cells;
-  };
-
-  const rawHeaders = splitLine(lines[0]);
+  const rawHeaders = splitDelimitedLine(lines[0], delimiter);
   const headers = rawHeaders.map((header, index) => normalizeHeaderName(header || `coluna_${index + 1}`));
 
   const rows = lines.slice(1).map((line) => {
-    const cells = splitLine(line);
+    const cells = splitDelimitedLine(line, delimiter);
 
     return headers.reduce<GenericRow>((acc, header, index) => {
       acc[header] = (cells[index] ?? "").trim();
@@ -163,7 +212,8 @@ export async function parseFileToRows(caminhoRelativo: string): Promise<ParsedFi
 
   if (extension === ".csv") {
     const content = await readFile(absolutePath, "utf8");
-    return { table: parseDelimitedText(content, ","), warnings: [] };
+    const delimiter = detectDelimiter(content);
+    return { table: parseDelimitedText(content, delimiter), warnings: [] };
   }
 
   if (extension === ".xlsx") {
@@ -175,7 +225,7 @@ export async function parseFileToRows(caminhoRelativo: string): Promise<ParsedFi
     const utf8 = buffer.toString("utf8");
 
     if (utf8.includes(",") || utf8.includes(";")) {
-      const delimiter = utf8.includes(";") ? ";" : ",";
+      const delimiter = detectDelimiter(utf8);
       return {
         table: parseDelimitedText(utf8, delimiter),
         warnings: ["Arquivo .xls textual processado como delimitado; valide os dados importados."]
