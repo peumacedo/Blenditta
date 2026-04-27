@@ -58,6 +58,9 @@ async function processSingleFile(summary: ImportSummary, fechamentoId: string, a
       new Set([...summary.unrecognizedColumnsByType.extrato_bancario, ...mapped.unrecognizedColumns])
     );
     mapped.warnings.forEach((warning) => summary.warnings.push(`${arquivo.nome}: ${warning}`));
+    if (mapped.data.length === 0 && parsed.table.rows.length > 0) {
+      summary.warnings.push(`${arquivo.nome}: arquivo lido sem linhas válidas para extrato bancário.`);
+    }
     return;
   }
 
@@ -79,6 +82,9 @@ async function processSingleFile(summary: ImportSummary, fechamentoId: string, a
       new Set([...summary.unrecognizedColumnsByType.contas_pagar, ...mapped.unrecognizedColumns])
     );
     mapped.warnings.forEach((warning) => summary.warnings.push(`${arquivo.nome}: ${warning}`));
+    if (mapped.data.length === 0 && parsed.table.rows.length > 0) {
+      summary.warnings.push(`${arquivo.nome}: arquivo lido sem linhas válidas para contas a pagar.`);
+    }
     return;
   }
 
@@ -99,6 +105,9 @@ async function processSingleFile(summary: ImportSummary, fechamentoId: string, a
     new Set([...summary.unrecognizedColumnsByType.contas_receber, ...mapped.unrecognizedColumns])
   );
   mapped.warnings.forEach((warning) => summary.warnings.push(`${arquivo.nome}: ${warning}`));
+  if (mapped.data.length === 0 && parsed.table.rows.length > 0) {
+    summary.warnings.push(`${arquivo.nome}: arquivo lido sem linhas válidas para contas a receber.`);
+  }
 }
 
 export async function processFechamentoFiles(fechamentoId: string): Promise<{ summary: ImportSummary }> {
