@@ -1,65 +1,98 @@
 # Blenditta · Fechamento Financeiro Mensal (MVP)
 
-Base inicial do MVP web para fechamento financeiro mensal com Next.js, TypeScript, Tailwind, shadcn/ui, Prisma e PostgreSQL.
+Aplicação web do MVP de fechamento financeiro mensal da Blenditta, construída com Next.js (App Router), TypeScript, Tailwind, shadcn/ui, Prisma e PostgreSQL.
 
 ## Requisitos
 
 - Node.js 20+
 - Docker + Docker Compose
+- npm
 
-## Primeiros passos
+## Setup local
 
 1. Copie as variáveis de ambiente:
+
    ```bash
    cp .env.example .env
    ```
-2. Suba o PostgreSQL local:
+
+2. Suba o banco PostgreSQL:
+
    ```bash
    docker compose up -d
    ```
-3. Instale dependências:
+
+3. Instale as dependências:
+
    ```bash
    npm install
    ```
-4. Gere o cliente Prisma:
+
+## Prisma e banco de dados
+
+1. Gere o Prisma Client:
+
    ```bash
    npm run prisma:generate
    ```
-5. Aplique as migrations:
+
+2. Aplique as migrations existentes:
+
    ```bash
    npm run prisma:migrate:deploy
    ```
-6. Popule o banco com dados mock:
+
+3. Popule o banco com seed:
+
    ```bash
    npm run prisma:seed
    ```
-7. Rode o projeto:
-5. Rode o projeto:
+
+4. (Opcional) Abra o Prisma Studio:
+
    ```bash
-   npm run dev
+   npm run prisma:studio
    ```
 
-## Scripts
+## Executar aplicação
 
-- `npm run dev`: ambiente de desenvolvimento
-- `npm run build`: build de produção
-- `npm run start`: servir build
-- `npm run lint`: lint com Next.js
-- `npm run prisma:generate`: gerar Prisma Client
-- `npm run prisma:migrate:dev`: criar/aplicar migrations em desenvolvimento
-- `npm run prisma:migrate:deploy`: aplicar migrations existentes
-- `npm run prisma:seed`: popular banco com dados mock
-- `npm run prisma:studio`: abrir Prisma Studio
+Ambiente de desenvolvimento:
 
-## Modelagem do MVP (Prisma)
+```bash
+npm run dev
+```
 
-- `fechamentos`
-- `arquivos`
-- `extrato_bancario`
-- `contas_pagar`
-- `contas_receber`
-- `inconsistencias`
+Build de produção:
 
-As relações são centralizadas em `fechamentos`, permitindo evolução futura do dashboard e da conciliação financeira.
-- `npm run prisma:migrate:dev`: criar/aplicar migrations
-- `npm run prisma:studio`: abrir Prisma Studio
+```bash
+npm run build
+npm run start
+```
+
+## Scripts disponíveis
+
+- `npm run dev`: inicia o servidor de desenvolvimento
+- `npm run build`: gera o build de produção
+- `npm run start`: inicia a aplicação em modo produção
+- `npm run lint`: executa o lint do projeto
+- `npm run prisma:generate`: gera Prisma Client
+- `npm run prisma:migrate:dev`: cria/aplica migration em desenvolvimento
+- `npm run prisma:migrate:deploy`: aplica migrations existentes
+- `npm run prisma:seed`: executa seed do banco
+- `npm run prisma:studio`: abre Prisma Studio
+
+## Escopo entregue no MVP atual
+
+- Fundação do projeto
+- Prisma + seed
+- Navegação principal
+- Listagem de fechamentos
+- Detalhe do fechamento
+- Criação de novo fechamento
+- Rotas placeholder das etapas:
+  - `/fechamentos/[id]/upload`
+  - `/fechamentos/[id]/dados`
+  - `/fechamentos/[id]/conciliacao`
+  - `/fechamentos/[id]/dashboard`
+  - `/fechamentos/[id]/auditoria`
+  - `/fechamentos/[id]/relatorio`

@@ -17,9 +17,9 @@ import { prisma } from "@/lib/prisma";
 export default async function FechamentoDetailPage({
   params
 }: {
-  params: Promise<{ id: string }>;
+  params: { id: string };
 }) {
-  const { id } = await params;
+  const { id } = params;
 
   const fechamento = await prisma.fechamento.findUnique({
     where: { id },
