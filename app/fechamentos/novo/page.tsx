@@ -1,19 +1,17 @@
-import Link from "next/link";
-
-import { buttonVariants } from "@/components/ui/button";
+import { NovoFechamentoForm } from "@/components/fechamentos/novo-fechamento-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function NovoFechamentoPage() {
   return (
-    <Card>
+    <Card className="mx-auto max-w-2xl">
       <CardHeader>
         <CardTitle>Novo fechamento</CardTitle>
-        <CardDescription>Fluxo de criação será implementado na próxima etapa do MVP.</CardDescription>
+        <CardDescription>
+          Cadastre a competência mensal para iniciar o fluxo financeiro.
+        </CardDescription>
       </CardHeader>
       <CardContent>
-        <Link href="/fechamentos" className={buttonVariants({ variant: "outline" })}>
-          Voltar para lista
-        </Link>
+        <NovoFechamentoForm />
       </CardContent>
     </Card>
   );

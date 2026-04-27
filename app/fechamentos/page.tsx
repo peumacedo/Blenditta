@@ -27,7 +27,7 @@ export default async function FechamentosPage() {
           <CardDescription>Controle de competências e acesso ao fluxo financeiro.</CardDescription>
         </div>
         <Link href="/fechamentos/novo" className={buttonVariants()}>
-          Criar novo fechamento
+          Novo fechamento
         </Link>
       </CardHeader>
 
