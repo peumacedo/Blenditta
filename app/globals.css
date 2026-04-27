@@ -21,3 +21,24 @@
 body {
   @apply bg-background text-foreground antialiased;
 }
+
+@media print {
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .report-print-root .rounded-xl,
+  .report-print-root .border,
+  .report-print-root table,
+  .report-print-root th,
+  .report-print-root td {
+    border-color: #d1d5db !important;
+    box-shadow: none !important;
+    background: #fff !important;
+  }
+}
