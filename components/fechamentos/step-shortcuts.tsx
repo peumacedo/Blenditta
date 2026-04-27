@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 const steps = [
   { slug: "upload", title: "Upload", description: "Envio dos arquivos da competência" },
   { slug: "dados", title: "Dados", description: "Conferência de extratos e lançamentos" },
-  { slug: "conciliacao", title: "Conciliação", description: "Aproximação entre banco e contas" },
+  { slug: "conciliacao", title: "Validação das bases", description: "Conferência dos arquivos exportados do ERP" },
   { slug: "dashboard", title: "Dashboard", description: "Visão executiva do fechamento" },
   { slug: "auditoria", title: "Auditoria", description: "Rastreabilidade e histórico" },
   { slug: "relatorio", title: "Relatório", description: "Consolidação final para exportação" }

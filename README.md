@@ -100,3 +100,9 @@ npm run start
   - `/fechamentos/[id]/dashboard`
   - `/fechamentos/[id]/auditoria`
   - `/fechamentos/[id]/relatorio`
+
+## Premissa funcional do MVP
+
+- O sistema **não substitui** a conciliação bancária do ERP do cliente.
+- O sistema consome bases já exportadas/tratadas do ERP (extrato, contas a pagar e contas a receber).
+- O foco do MVP é análise gerencial mensal, dashboard executivo e relatório gerencial estruturado.
