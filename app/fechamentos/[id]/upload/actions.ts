@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
+import { processFechamentoFiles } from "@/lib/import/process-fechamento-files";
+import { type ImportSummary } from "@/lib/import/types";
 import { prisma } from "@/lib/prisma";
 import {
   MAX_UPLOAD_SIZE_BYTES,
@@ -101,8 +103,9 @@ export type DeleteActionState = {
 export async function deleteArquivoAction(
   fechamentoId: string,
   arquivoId: string,
-  _prevState: DeleteActionState
+  prevState: DeleteActionState
 ): Promise<DeleteActionState> {
+  void prevState;
   const arquivo = await prisma.arquivo.findFirst({
     where: {
       id: arquivoId,
@@ -132,5 +135,40 @@ export async function deleteArquivoAction(
     return { successMessage: "Arquivo excluído com sucesso." };
   } catch {
     return { errorMessage: "Não foi possível excluir o arquivo." };
+  }
+}
+
+export type ProcessActionState = {
+  successMessage?: string;
+  errorMessage?: string;
+  summary?: ImportSummary;
+};
+
+export async function processArquivosAction(
+  fechamentoId: string,
+  prevState: ProcessActionState
+): Promise<ProcessActionState> {
+  void prevState;
+  const fechamento = await prisma.fechamento.findUnique({
+    where: { id: fechamentoId },
+    select: { id: true }
+  });
+
+  if (!fechamento) {
+    return { errorMessage: "Fechamento não encontrado." };
+  }
+
+  try {
+    const { summary } = await processFechamentoFiles(fechamentoId);
+
+    revalidatePath(`/fechamentos/${fechamentoId}/upload`);
+    revalidatePath(`/fechamentos/${fechamentoId}`);
+
+    return {
+      successMessage: "Processamento concluído.",
+      summary
+    };
+  } catch {
+    return { errorMessage: "Falha ao processar os arquivos deste fechamento." };
   }
 }

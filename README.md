@@ -89,8 +89,12 @@ npm run start
 - Listagem de fechamentos
 - Detalhe do fechamento
 - Criação de novo fechamento
-- Rotas placeholder das etapas:
-  - `/fechamentos/[id]/upload`
+- Upload de arquivos em `/fechamentos/[id]/upload` com armazenamento local e catálogo na tabela `Arquivo`
+- Processamento de arquivos CSV/Excel em `/fechamentos/[id]/upload` para importar em:
+  - `ExtratoBancario`
+  - `ContaPagar`
+  - `ContaReceber`
+- Rotas ainda em evolução:
   - `/fechamentos/[id]/dados`
   - `/fechamentos/[id]/conciliacao`
   - `/fechamentos/[id]/dashboard`

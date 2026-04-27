@@ -43,8 +43,7 @@ export default async function UploadPage({ params }: { params: { id: string } })
         </CardHeader>
         <CardContent>
           <p className="text-sm text-slate-600">
-            Envie os arquivos do fechamento mensal. Nesta etapa os arquivos são apenas armazenados e catalogados para
-            processamento posterior.
+            Envie os arquivos do fechamento mensal e execute o processamento para importar CSV/Excel para o banco.
           </p>
         </CardContent>
       </Card>
