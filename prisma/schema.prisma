@@ -28,12 +28,12 @@ enum InconsistenciaStatus {
 }
 
 model Fechamento {
-  id              String              @id @default(cuid())
+  id              String            @id @default(cuid())
   competencia     DateTime
-  status          FechamentoStatus    @default(EM_PREPARACAO)
+  status          FechamentoStatus  @default(EM_PREPARACAO)
   observacoes     String?
-  createdAt       DateTime            @default(now()) @map("created_at")
-  updatedAt       DateTime            @updatedAt @map("updated_at")
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
   arquivos        Arquivo[]
   extratos        ExtratoBancario[]
   contasPagar     ContaPagar[]
@@ -72,30 +72,30 @@ model ExtratoBancario {
 }
 
 model ContaPagar {
-  id           String       @id @default(cuid())
-  fechamentoId String       @map("fechamento_id")
+  id           String        @id @default(cuid())
+  fechamentoId String        @map("fechamento_id")
   fornecedor   String
   vencimento   DateTime
   pagamento    DateTime?
-  valor        Decimal      @db.Decimal(14, 2)
+  valor        Decimal       @db.Decimal(14, 2)
   categoria    String
   situacao     SituacaoConta @default(PENDENTE)
-  fechamento   Fechamento   @relation(fields: [fechamentoId], references: [id], onDelete: Cascade)
+  fechamento   Fechamento    @relation(fields: [fechamentoId], references: [id], onDelete: Cascade)
 
   @@index([fechamentoId, vencimento])
   @@map("contas_pagar")
 }
 
 model ContaReceber {
-  id           String       @id @default(cuid())
-  fechamentoId String       @map("fechamento_id")
+  id           String        @id @default(cuid())
+  fechamentoId String        @map("fechamento_id")
   cliente      String
   vencimento   DateTime
   recebimento  DateTime?
-  valor        Decimal      @db.Decimal(14, 2)
+  valor        Decimal       @db.Decimal(14, 2)
   categoria    String
   situacao     SituacaoConta @default(PENDENTE)
-  fechamento   Fechamento   @relation(fields: [fechamentoId], references: [id], onDelete: Cascade)
+  fechamento   Fechamento    @relation(fields: [fechamentoId], references: [id], onDelete: Cascade)
 
   @@index([fechamentoId, vencimento])
   @@map("contas_receber")
