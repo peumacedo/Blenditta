@@ -1,7 +1,7 @@
 import { SituacaoConta } from "@prisma/client";
 
-import { isEmptyRow, normalizeHeader } from "./parsers";
-import { type GenericRow, type MapResult } from "./types";
+import { isEmptyRow, normalizeHeader } from "./parsers.ts";
+import { type GenericRow, type MapResult } from "./types.ts";
 
 type HeaderMap = Record<string, string | undefined>;
 

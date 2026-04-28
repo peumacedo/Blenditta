@@ -179,6 +179,133 @@ const demoDataset: DemoDataset = {
   }))
 };
 
+
+
+const extraDemoMonths = [
+  { id: "demo-2025-12", competencia: "2025-12-01", status: FechamentoStatus.FECHADO, obs: "Pico de vendas de fim de ano." },
+  { id: "demo-2025-11", competencia: "2025-11-01", status: FechamentoStatus.FECHADO, obs: "Black Friday com forte e-commerce." },
+  { id: "demo-2025-10", competencia: "2025-10-01", status: FechamentoStatus.FECHADO, obs: "Mês de estabilidade operacional." },
+  { id: "demo-2025-03", competencia: "2025-03-01", status: FechamentoStatus.FECHADO, obs: "Base para comparação anual YoY." }
+];
+
+for (const [index, month] of extraDemoMonths.entries()) {
+  demoDataset.fechamentos.push({
+    id: month.id,
+    competencia: makeDate(month.competencia),
+    status: month.status,
+    observacoes: month.obs,
+    createdAt: makeDate(month.competencia),
+    updatedAt: makeDate(month.competencia)
+  });
+
+  demoDataset.arquivos.push(
+    {
+      id: `arq-extra-${index + 1}-1`,
+      fechamentoId: month.id,
+      nome: `extrato_${month.id}.csv`,
+      tipo: "extrato_bancario",
+      caminho: `demo/${month.id}/extrato.csv`,
+      criadoEm: makeDate(month.competencia)
+    },
+    {
+      id: `arq-extra-${index + 1}-2`,
+      fechamentoId: month.id,
+      nome: `contas_pagar_${month.id}.xlsx`,
+      tipo: "contas_pagar",
+      caminho: `demo/${month.id}/contas_pagar.xlsx`,
+      criadoEm: makeDate(month.competencia)
+    },
+    {
+      id: `arq-extra-${index + 1}-3`,
+      fechamentoId: month.id,
+      nome: `contas_receber_${month.id}.xlsx`,
+      tipo: "contas_receber",
+      caminho: `demo/${month.id}/contas_receber.xlsx`,
+      criadoEm: makeDate(month.competencia)
+    }
+  );
+}
+
+const extraExtratos: Array<[string, string, string, number, number, string]> = [
+  ["demo-2025-12", "2025-12-03", "Venda B2B torra especial", 17800, 96300, "RECEITA_B2B"],
+  ["demo-2025-12", "2025-12-06", "Venda e-commerce", 9200, 105500, "RECEITA_ECOMMERCE"],
+  ["demo-2025-12", "2025-12-10", "Insumos grãos", -6100, 99400, "INSUMOS"],
+  ["demo-2025-12", "2025-12-12", "Embalagens", -1800, 97600, "EMBALAGEM"],
+  ["demo-2025-12", "2025-12-15", "Energia", -1350, 96250, "ENERGIA"],
+  ["demo-2025-12", "2025-12-18", "Marketing digital", -2200, 94050, "MARKETING"],
+  ["demo-2025-11", "2025-11-02", "Venda e-commerce", 16500, 87200, "RECEITA_ECOMMERCE"],
+  ["demo-2025-11", "2025-11-08", "Cursos de barista", 3800, 91000, "RECEITA_SERVICOS"],
+  ["demo-2025-11", "2025-11-13", "Fretes", -2100, 88900, "FRETE"],
+  ["demo-2025-11", "2025-11-17", "Aluguel", -4200, 84700, "ALUGUEL"],
+  ["demo-2025-11", "2025-11-20", "Sistemas", -740, 83960, "SISTEMA"],
+  ["demo-2025-11", "2025-11-25", "Retirada sócios", -2600, 81360, "RETIRADA_SOCIOS"],
+  ["demo-2025-10", "2025-10-03", "Venda recorrente assinaturas", 12800, 79800, "RECEITA_RECORRENTE"],
+  ["demo-2025-10", "2025-10-07", "Venda B2B", 9600, 89400, "RECEITA_B2B"],
+  ["demo-2025-10", "2025-10-11", "Matéria-prima", -5800, 83600, "MATERIA_PRIMA"],
+  ["demo-2025-10", "2025-10-18", "Investimento em moinho", -3200, 80400, "INVESTIMENTO"],
+  ["demo-2025-10", "2025-10-22", "Impostos", -2100, 78300, "IMPOSTOS_TAXAS"],
+  ["demo-2025-10", "2025-10-27", "Energia", -1240, 77060, "ENERGIA"],
+  ["demo-2025-03", "2025-03-04", "Receita B2B", 14100, 68600, "RECEITA_B2B"],
+  ["demo-2025-03", "2025-03-09", "Receita e-commerce", 7300, 75900, "RECEITA_ECOMMERCE"],
+  ["demo-2025-03", "2025-03-11", "Custos de insumos", -5100, 70800, "INSUMOS"],
+  ["demo-2025-03", "2025-03-14", "Frete", -1900, 68900, "FRETE"],
+  ["demo-2025-03", "2025-03-21", "Aluguel", -3900, 65000, "ALUGUEL"],
+  ["demo-2025-03", "2025-03-27", "Marketing", -1500, 63500, "MARKETING"]
+];
+
+for (const [index, item] of extraExtratos.entries()) {
+  demoDataset.extratos.push({
+    id: `ext-extra-${index + 1}`,
+    fechamentoId: item[0],
+    data: makeDate(item[1]),
+    descricao: item[2],
+    valor: item[3],
+    saldo: item[4],
+    categoria: item[5],
+    conciliado: true
+  });
+}
+
+const extraContasPagar: Array<[string, string, string, string | null, number, string, SituacaoConta]> = [
+  ["demo-2025-12", "Torras do Vale", "2026-01-05", null, 4200, "INSUMOS", SituacaoConta.PENDENTE],
+  ["demo-2025-11", "Energia Serra", "2025-11-30", null, 1320, "ENERGIA", SituacaoConta.VENCIDO],
+  ["demo-2025-10", "Locadora Equip", "2025-10-25", "2025-10-24", 980, "MANUTENCAO", SituacaoConta.PAGO],
+  ["demo-2025-03", "Fornecedor Grãos Sul", "2025-03-25", null, 2750, "INSUMOS", SituacaoConta.VENCIDO]
+];
+
+for (const [index, item] of extraContasPagar.entries()) {
+  demoDataset.contasPagar.push({
+    id: `cp-extra-${index + 1}`,
+    fechamentoId: item[0],
+    fornecedor: item[1],
+    vencimento: makeDate(item[2]),
+    pagamento: item[3] ? makeDate(item[3]) : null,
+    valor: item[4],
+    categoria: item[5],
+    situacao: item[6]
+  });
+}
+
+const extraContasReceber: Array<[string, string, string, string | null, number, string, SituacaoConta]> = [
+  ["demo-2025-12", "Café Aurora B2B", "2026-01-07", null, 6100, "RECEITA_B2B", SituacaoConta.PENDENTE],
+  ["demo-2025-11", "Marketplace Grão", "2025-11-18", "2025-11-18", 3400, "RECEITA_ECOMMERCE", SituacaoConta.RECEBIDO],
+  ["demo-2025-10", "Escola de Barista", "2025-10-21", null, 2100, "RECEITA_SERVICOS", SituacaoConta.PENDENTE],
+  ["demo-2025-03", "Cliente Chapada", "2025-03-19", null, 2450, "RECEITA_B2B", SituacaoConta.VENCIDO]
+];
+
+for (const [index, item] of extraContasReceber.entries()) {
+  demoDataset.contasReceber.push({
+    id: `cr-extra-${index + 1}`,
+    fechamentoId: item[0],
+    cliente: item[1],
+    vencimento: makeDate(item[2]),
+    recebimento: item[3] ? makeDate(item[3]) : null,
+    valor: item[4],
+    categoria: item[5],
+    situacao: item[6]
+  });
+}
+
 function cloneItem<T extends { [key: string]: unknown }>(item: T): T {
   return Object.fromEntries(
     Object.entries(item).map(([key, value]) => [key, value instanceof Date ? new Date(value) : value])
