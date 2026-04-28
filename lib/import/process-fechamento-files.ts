@@ -35,6 +35,9 @@ function isImportableType(tipo: string): tipo is ImportableFileType {
 
 async function processSingleFile(summary: ImportSummary, fechamentoId: string, arquivo: Arquivo) {
   const parsed = await parseFileToRows(arquivo.caminho);
+  if (parsed.table.headers.length === 0 && parsed.table.rows.length === 0) {
+    summary.warnings.push(`${arquivo.nome}: arquivo vazio ou sem colunas legíveis.`);
+  }
 
   parsed.warnings.forEach((warning) => {
     summary.warnings.push(`${arquivo.nome}: ${warning}`);
@@ -57,6 +60,9 @@ async function processSingleFile(summary: ImportSummary, fechamentoId: string, a
     summary.unrecognizedColumnsByType.extrato_bancario = Array.from(
       new Set([...summary.unrecognizedColumnsByType.extrato_bancario, ...mapped.unrecognizedColumns])
     );
+    if (mapped.unrecognizedColumns.length) {
+      summary.warnings.push(`${arquivo.nome}: colunas não reconhecidas no extrato (${mapped.unrecognizedColumns.join(", ")}).`);
+    }
     mapped.warnings.forEach((warning) => summary.warnings.push(`${arquivo.nome}: ${warning}`));
     if (mapped.data.length === 0 && parsed.table.rows.length > 0) {
       summary.warnings.push(`${arquivo.nome}: arquivo lido sem linhas válidas para extrato bancário.`);
@@ -81,6 +87,9 @@ async function processSingleFile(summary: ImportSummary, fechamentoId: string, a
     summary.unrecognizedColumnsByType.contas_pagar = Array.from(
       new Set([...summary.unrecognizedColumnsByType.contas_pagar, ...mapped.unrecognizedColumns])
     );
+    if (mapped.unrecognizedColumns.length) {
+      summary.warnings.push(`${arquivo.nome}: colunas não reconhecidas em contas a pagar (${mapped.unrecognizedColumns.join(", ")}).`);
+    }
     mapped.warnings.forEach((warning) => summary.warnings.push(`${arquivo.nome}: ${warning}`));
     if (mapped.data.length === 0 && parsed.table.rows.length > 0) {
       summary.warnings.push(`${arquivo.nome}: arquivo lido sem linhas válidas para contas a pagar.`);
@@ -104,6 +113,9 @@ async function processSingleFile(summary: ImportSummary, fechamentoId: string, a
   summary.unrecognizedColumnsByType.contas_receber = Array.from(
     new Set([...summary.unrecognizedColumnsByType.contas_receber, ...mapped.unrecognizedColumns])
   );
+  if (mapped.unrecognizedColumns.length) {
+    summary.warnings.push(`${arquivo.nome}: colunas não reconhecidas em contas a receber (${mapped.unrecognizedColumns.join(", ")}).`);
+  }
   mapped.warnings.forEach((warning) => summary.warnings.push(`${arquivo.nome}: ${warning}`));
   if (mapped.data.length === 0 && parsed.table.rows.length > 0) {
     summary.warnings.push(`${arquivo.nome}: arquivo lido sem linhas válidas para contas a receber.`);

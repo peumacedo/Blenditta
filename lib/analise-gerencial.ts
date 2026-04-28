@@ -103,6 +103,27 @@ function normalizeText(value: string | null | undefined) {
     .toLowerCase();
 }
 
+function normalizeCategoryToken(value: string | null | undefined) {
+  return normalizeText(value)
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function singularizeWord(word: string) {
+  if (word.endsWith("oes")) return `${word.slice(0, -3)}ao`;
+  if (word.endsWith("aes")) return `${word.slice(0, -3)}ao`;
+  if (word.endsWith("is") && word.length > 4) return `${word.slice(0, -2)}l`;
+  if (word.endsWith("s") && word.length > 3) return word.slice(0, -1);
+  return word;
+}
+
+function normalizedPhraseVariants(value: string) {
+  const normalized = normalizeCategoryToken(value);
+  const words = normalized.split(" ").filter(Boolean).map(singularizeWord);
+  return [normalized, words.join(" ")];
+}
+
 function hasKeyword(haystack: string, words: string[]) {
   return words.some((word) => haystack.includes(word));
 }
@@ -116,29 +137,58 @@ export function classificarGrupoGerencial({
   descricao: string;
   valor: number;
 }): GrupoGerencial {
-  const texto = `${normalizeText(categoria)} ${normalizeText(descricao)}`;
+  const texto = `${normalizeCategoryToken(categoria)} ${normalizeCategoryToken(descricao)}`.trim();
+  const variantes = normalizedPhraseVariants(texto);
+  const textoComparavel = variantes.join(" ");
 
-  if (hasKeyword(texto, ["imposto", "taxa", "tribut", "cartao", "tarifa fiscal"])) {
+  if (hasKeyword(textoComparavel, ["imposto", "taxa", "tribut", "cartao"])) {
     return "IMPOSTOS_TAXAS";
   }
 
-  if (hasKeyword(texto, ["juros", "tarifa bancaria", " banco", "emprestimo", "financiamento"])) {
+  if (hasKeyword(textoComparavel, ["juros", "tarifa bancaria", " banco", "emprestimo", "financiamento"])) {
     return "RESULTADO_FINANCEIRO";
   }
 
-  if (hasKeyword(texto, ["retirada", "pro-labore", "prolabore", "familia", "socio"])) {
+  if (hasKeyword(textoComparavel, ["retirada", "pro labore", "prolabore", "familia", "socio"])) {
     return "RETIRADA";
   }
 
-  if (hasKeyword(texto, ["investimento", "equipamento", "obra", "reforma", "maquina"])) {
+  if (hasKeyword(textoComparavel, ["investimento", "equipamento", "obra", "reforma", "maquina"])) {
     return "INVESTIMENTO";
   }
 
-  if (hasKeyword(texto, ["insumo", "embalagem", "frete", "producao", "mercadoria", "materia-prima"])) {
+  if (
+    hasKeyword(textoComparavel, [
+      "insumo",
+      "embalagem",
+      "frete",
+      "producao",
+      "mercadoria",
+      "materia prima",
+      "materia prima",
+      "comissao",
+      "logistica"
+    ])
+  ) {
     return "CUSTO_VARIAVEL";
   }
 
-  if (hasKeyword(texto, ["aluguel", "salario", "energia", "internet", "sistema", "administrativo", "manutencao"])) {
+  if (
+    hasKeyword(textoComparavel, [
+      "aluguel",
+      "salario",
+      "folha",
+      "energia",
+      "agua",
+      "internet",
+      "sistema",
+      "software",
+      "contabilidade",
+      "administrativo",
+      "manutencao",
+      "marketing"
+    ])
+  ) {
     return "DESPESA_FIXA";
   }
 

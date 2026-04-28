@@ -84,7 +84,7 @@ export async function getDashboardViewModel(fechamentoId: string): Promise<Dashb
   const mesAnterior = anteriores[0] ?? null;
 
   const avgBase = anteriores.slice(0, 3);
-  const media3Meses = avgBase.length
+  const media3Meses = avgBase.length >= 3
     ? {
         saldoFinal: avg(avgBase.map((item) => item.saldoFinal)),
         entradas: avg(avgBase.map((item) => item.entradas)),
@@ -102,6 +102,21 @@ export async function getDashboardViewModel(fechamentoId: string): Promise<Dashb
   const despesasPrevMap = new Map<string, number>(
     (mesAnterior?.analise.saidasPorCategoria ?? []).map((item) => [item.categoria, item.valor])
   );
+
+  const comportamentoKpi: Record<string, "higher_is_better" | "higher_is_worse"> = {
+    "saldo-inicial": "higher_is_better",
+    entradas: "higher_is_better",
+    saidas: "higher_is_worse",
+    "resultado-caixa": "higher_is_better",
+    "saldo-final": "higher_is_better",
+    "receita-bruta": "higher_is_better",
+    custos: "higher_is_worse",
+    despesas: "higher_is_worse",
+    "resultado-gerencial": "higher_is_better",
+    cr: "higher_is_better",
+    cp: "higher_is_worse",
+    qualidade: "higher_is_worse"
+  };
 
   const kpis = [
     ["saldo-inicial", "Saldo inicial", analiseAtual.resumoExecutivo.saldoInicial, "Base de caixa no início da competência."],
@@ -129,7 +144,19 @@ export async function getDashboardViewModel(fechamentoId: string): Promise<Dashb
               : null;
 
     const variacaoMoM = typeof previousValue === "number" ? pct(Number(valor), previousValue) : null;
-    const tone: "positive" | "negative" | "neutral" = variacaoMoM === null ? "neutral" : variacaoMoM > 0 ? "positive" : variacaoMoM < 0 ? "negative" : "neutral";
+    const comportamento = comportamentoKpi[String(key)] ?? "higher_is_better";
+    const tone: "positive" | "negative" | "neutral" =
+      variacaoMoM === null
+        ? "neutral"
+        : variacaoMoM === 0
+          ? "neutral"
+          : comportamento === "higher_is_better"
+            ? variacaoMoM > 0
+              ? "positive"
+              : "negative"
+            : variacaoMoM > 0
+              ? "negative"
+              : "positive";
 
     return {
       key: String(key),
@@ -145,6 +172,35 @@ export async function getDashboardViewModel(fechamentoId: string): Promise<Dashb
   const receitaBase = analiseAtual.resultadoGerencial.receitaBruta;
   const receitaLiquida = analiseAtual.resultadoGerencial.receitaLiquida;
 
+  const dreAtual = {
+    receitaBruta: analiseAtual.resultadoGerencial.receitaBruta,
+    impostosTaxas: -analiseAtual.resultadoGerencial.impostosTaxas,
+    receitaLiquida: analiseAtual.resultadoGerencial.receitaLiquida,
+    custosVariaveis: -analiseAtual.resultadoGerencial.custosVariaveis,
+    margemBruta: analiseAtual.resultadoGerencial.margemBruta,
+    despesasFixas: -analiseAtual.resultadoGerencial.despesasFixas,
+    resultadoOperacional: analiseAtual.resultadoGerencial.resultadoOperacional,
+    resultadoFinanceiro: analiseAtual.resultadoGerencial.resultadoFinanceiro,
+    retiradas: -analiseAtual.resultadoGerencial.retiradas,
+    investimentos: -analiseAtual.resultadoGerencial.investimentos,
+    resultadoGerencial: analiseAtual.resultadoGerencial.resultadoGerencial
+  };
+  const dreAnterior = mesAnterior
+    ? {
+        receitaBruta: mesAnterior.analise.resultadoGerencial.receitaBruta,
+        impostosTaxas: -mesAnterior.analise.resultadoGerencial.impostosTaxas,
+        receitaLiquida: mesAnterior.analise.resultadoGerencial.receitaLiquida,
+        custosVariaveis: -mesAnterior.analise.resultadoGerencial.custosVariaveis,
+        margemBruta: mesAnterior.analise.resultadoGerencial.margemBruta,
+        despesasFixas: -mesAnterior.analise.resultadoGerencial.despesasFixas,
+        resultadoOperacional: mesAnterior.analise.resultadoGerencial.resultadoOperacional,
+        resultadoFinanceiro: mesAnterior.analise.resultadoGerencial.resultadoFinanceiro,
+        retiradas: -mesAnterior.analise.resultadoGerencial.retiradas,
+        investimentos: -mesAnterior.analise.resultadoGerencial.investimentos,
+        resultadoGerencial: mesAnterior.analise.resultadoGerencial.resultadoGerencial
+      }
+    : null;
+
   const dreLinhas = [
     ["Receita Bruta", analiseAtual.resultadoGerencial.receitaBruta, receitaBase, "Base total de faturamento classificado."],
     ["(-) Impostos e taxas", -analiseAtual.resultadoGerencial.impostosTaxas, receitaBase, "Tributos e taxas sobre operação."],
@@ -157,13 +213,29 @@ export async function getDashboardViewModel(fechamentoId: string): Promise<Dashb
     ["(-) Retiradas", -analiseAtual.resultadoGerencial.retiradas, receitaLiquida, "Retiradas não operacionais."],
     ["(-) Investimentos", -analiseAtual.resultadoGerencial.investimentos, receitaLiquida, "Aplicações pontuais de capital."],
     ["= Resultado Gerencial", analiseAtual.resultadoGerencial.resultadoGerencial, receitaLiquida, "Indicador final para gestão." ]
-  ].map(([nome, valor, base, observacao]) => ({
+  ].map(([nome, valor, base, observacao]) => {
+    const momMap: Record<string, number | null> = {
+      "Receita Bruta": dreAnterior ? pct(dreAtual.receitaBruta, dreAnterior.receitaBruta) : null,
+      "(-) Impostos e taxas": dreAnterior ? pct(dreAtual.impostosTaxas, dreAnterior.impostosTaxas) : null,
+      "= Receita Líquida": dreAnterior ? pct(dreAtual.receitaLiquida, dreAnterior.receitaLiquida) : null,
+      "(-) Custos Variáveis": dreAnterior ? pct(dreAtual.custosVariaveis, dreAnterior.custosVariaveis) : null,
+      "= Margem Bruta": dreAnterior ? pct(dreAtual.margemBruta, dreAnterior.margemBruta) : null,
+      "(-) Despesas Fixas": dreAnterior ? pct(dreAtual.despesasFixas, dreAnterior.despesasFixas) : null,
+      "= Resultado Operacional": dreAnterior ? pct(dreAtual.resultadoOperacional, dreAnterior.resultadoOperacional) : null,
+      "(+/-) Resultado Financeiro": dreAnterior ? pct(dreAtual.resultadoFinanceiro, dreAnterior.resultadoFinanceiro) : null,
+      "(-) Retiradas": dreAnterior ? pct(dreAtual.retiradas, dreAnterior.retiradas) : null,
+      "(-) Investimentos": dreAnterior ? pct(dreAtual.investimentos, dreAnterior.investimentos) : null,
+      "= Resultado Gerencial": dreAnterior ? pct(dreAtual.resultadoGerencial, dreAnterior.resultadoGerencial) : null
+    };
+
+    return {
     nome: String(nome),
     valor: Number(valor),
     vertical: Number(base) > 0 ? Number(valor) / Number(base) : null,
-    mom: null,
-    observacao: String(observacao)
-  }));
+    mom: momMap[String(nome)] ?? null,
+    observacao: Number(base) > 0 ? String(observacao) : "N/A sem receita base no período."
+    };
+  });
 
   const topDespesa = analiseAtual.saidasPorCategoria[0];
 
