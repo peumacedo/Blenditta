@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCompetencia } from "@/lib/fechamentos";
-import { prisma } from "@/lib/prisma";
+import { getFechamentoById } from "@/lib/data-source";
 
 export async function StagePage({
   id,
@@ -15,9 +15,7 @@ export async function StagePage({
   title: string;
   description: string;
 }) {
-  const fechamento = await prisma.fechamento.findUnique({
-    where: { id }
-  });
+  const fechamento = await getFechamentoById(id);
 
   if (!fechamento) {
     notFound();

@@ -6,21 +6,14 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { fechamentoStatusColor, fechamentoStatusLabel, formatCompetencia } from "@/lib/fechamentos";
-import { prisma } from "@/lib/prisma";
+import { getFechamentoById, listArquivosByFechamento } from "@/lib/data-source";
+import { isDemoMode } from "@/lib/env";
 
 export default async function UploadPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
-  const fechamento = await prisma.fechamento.findUnique({
-    where: { id },
-    include: {
-      arquivos: {
-        orderBy: {
-          criadoEm: "desc"
-        }
-      }
-    }
-  });
+  const fechamento = await getFechamentoById(id);
+  const arquivos = await listArquivosByFechamento(id);
 
   if (!fechamento) {
     notFound();
@@ -43,12 +36,14 @@ export default async function UploadPage({ params }: { params: Promise<{ id: str
         </CardHeader>
         <CardContent>
           <p className="text-sm text-slate-600">
-            Envie os arquivos do fechamento mensal e execute o processamento para importar CSV/Excel para o banco.
+            {isDemoMode
+              ? "Modo demonstração ativo: uploads e processamento estão simulados para navegação visual."
+              : "Envie os arquivos do fechamento mensal e execute o processamento para importar CSV/Excel para o banco."}
           </p>
         </CardContent>
       </Card>
 
-      <UploadFilesPanel fechamentoId={fechamento.id} arquivos={fechamento.arquivos} />
+      <UploadFilesPanel fechamentoId={fechamento.id} arquivos={arquivos} demoMode={isDemoMode} />
     </div>
   );
 }

@@ -12,14 +12,10 @@ import {
   formatCompetencia,
   formatDateTime
 } from "@/lib/fechamentos";
-import { prisma } from "@/lib/prisma";
+import { listFechamentos } from "@/lib/data-source";
 
 export default async function FechamentosPage() {
-  const fechamentos = await prisma.fechamento.findMany({
-    orderBy: {
-      competencia: "desc"
-    }
-  });
+  const fechamentos = await listFechamentos();
 
   return (
     <Card>

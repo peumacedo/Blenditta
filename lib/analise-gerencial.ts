@@ -1,6 +1,14 @@
-import { Prisma, SituacaoConta, type ContaPagar, type ContaReceber, type FechamentoStatus } from "@prisma/client";
+import { SituacaoConta, type FechamentoStatus } from "@prisma/client";
 
-import { prisma } from "@/lib/prisma";
+import {
+  getFechamentoById,
+  listArquivosByFechamento,
+  listContasPagarByFechamento,
+  listContasReceberByFechamento,
+  listExtratosByFechamento,
+  type AppContaPagar,
+  type AppContaReceber
+} from "@/lib/data-source";
 
 export type GrupoGerencial =
   | "RECEITA"
@@ -58,14 +66,14 @@ export type AnaliseGerencial = {
     totalAberto: number;
     vencidas: number;
     aVencer: number;
-    proximas: ContaReceber[];
+    proximas: AppContaReceber[];
   };
   contasPagar: {
     totalPago: number;
     totalAberto: number;
     vencidas: number;
     aVencer: number;
-    proximas: ContaPagar[];
+    proximas: AppContaPagar[];
   };
   indicadores: Array<{ nome: string; valor: string; leitura: string }>;
   diagnostico: {
@@ -84,7 +92,7 @@ export type AnaliseGerencial = {
 };
 
 
-function asNumber(value: Prisma.Decimal | number | null | undefined) {
+function asNumber(value: number | null | undefined) {
   return Number(value ?? 0);
 }
 
@@ -156,34 +164,19 @@ function percentual(value: number | null) {
 }
 
 export async function getAnaliseGerencial(fechamentoId: string): Promise<AnaliseGerencial | null> {
-  const fechamento = await prisma.fechamento.findUnique({
-    where: { id: fechamentoId },
-    select: {
-      id: true,
-      competencia: true,
-      status: true
-    }
-  });
+  const fechamento = await getFechamentoById(fechamentoId);
 
   if (!fechamento) {
     return null;
   }
 
-  const [extratos, contasPagar, contasReceber, quantidadeArquivos] = await Promise.all([
-    prisma.extratoBancario.findMany({
-      where: { fechamentoId },
-      orderBy: [{ data: "asc" }, { id: "asc" }]
-    }),
-    prisma.contaPagar.findMany({
-      where: { fechamentoId },
-      orderBy: [{ vencimento: "asc" }, { id: "asc" }]
-    }),
-    prisma.contaReceber.findMany({
-      where: { fechamentoId },
-      orderBy: [{ vencimento: "asc" }, { id: "asc" }]
-    }),
-    prisma.arquivo.count({ where: { fechamentoId } })
+  const [extratos, contasPagar, contasReceber, arquivos] = await Promise.all([
+    listExtratosByFechamento(fechamentoId),
+    listContasPagarByFechamento(fechamentoId),
+    listContasReceberByFechamento(fechamentoId),
+    listArquivosByFechamento(fechamentoId)
   ]);
+  const quantidadeArquivos = arquivos.length;
 
   const hoje = new Date();
   const entradas = extratos.filter((item) => asNumber(item.valor) > 0);

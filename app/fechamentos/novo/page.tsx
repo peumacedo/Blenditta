@@ -1,5 +1,6 @@
 import { NovoFechamentoForm } from "@/components/fechamentos/novo-fechamento-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { isDemoMode } from "@/lib/env";
 
 export default function NovoFechamentoPage() {
   return (
@@ -11,7 +12,7 @@ export default function NovoFechamentoPage() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <NovoFechamentoForm />
+        <NovoFechamentoForm demoMode={isDemoMode} />
       </CardContent>
     </Card>
   );

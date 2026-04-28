@@ -6,7 +6,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getAnaliseGerencial } from "@/lib/analise-gerencial";
 import { formatCompetencia, formatCurrency } from "@/lib/fechamentos";
-import { prisma } from "@/lib/prisma";
+import { getFechamentoBaseResumo } from "@/lib/data-source";
 
 export default async function ConciliacaoPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -16,23 +16,7 @@ export default async function ConciliacaoPage({ params }: { params: Promise<{ id
     notFound();
   }
 
-  const registros = await prisma.fechamento.findUnique({
-    where: { id },
-    select: {
-      _count: {
-        select: {
-          extratos: true,
-          contasPagar: true,
-          contasReceber: true,
-          arquivos: true
-        }
-      }
-    }
-  });
-
-  if (!registros) {
-    notFound();
-  }
+  const registros = await getFechamentoBaseResumo(id);
 
   const avisos: string[] = [];
 
@@ -48,7 +32,7 @@ export default async function ConciliacaoPage({ params }: { params: Promise<{ id
     avisos.push("Há muitas saídas sem categoria gerencial clara (SEM_CATEGORIA/NAO_CLASSIFICADO).");
   }
 
-  if (!registros._count.extratos) {
+  if (!registros.extratos) {
     avisos.push("Saldo final não pôde ser calculado por ausência de extrato.");
   }
 
@@ -74,10 +58,10 @@ export default async function ConciliacaoPage({ params }: { params: Promise<{ id
       </Card>
 
       <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="bg-slate-50"><CardHeader className="p-4"><CardDescription>Arquivos enviados</CardDescription><CardTitle className="text-base">{registros._count.arquivos}</CardTitle></CardHeader></Card>
-        <Card className="bg-slate-50"><CardHeader className="p-4"><CardDescription>Registros de extrato</CardDescription><CardTitle className="text-base">{registros._count.extratos}</CardTitle></CardHeader></Card>
-        <Card className="bg-slate-50"><CardHeader className="p-4"><CardDescription>Registros de contas a pagar</CardDescription><CardTitle className="text-base">{registros._count.contasPagar}</CardTitle></CardHeader></Card>
-        <Card className="bg-slate-50"><CardHeader className="p-4"><CardDescription>Registros de contas a receber</CardDescription><CardTitle className="text-base">{registros._count.contasReceber}</CardTitle></CardHeader></Card>
+        <Card className="bg-slate-50"><CardHeader className="p-4"><CardDescription>Arquivos enviados</CardDescription><CardTitle className="text-base">{registros.arquivos}</CardTitle></CardHeader></Card>
+        <Card className="bg-slate-50"><CardHeader className="p-4"><CardDescription>Registros de extrato</CardDescription><CardTitle className="text-base">{registros.extratos}</CardTitle></CardHeader></Card>
+        <Card className="bg-slate-50"><CardHeader className="p-4"><CardDescription>Registros de contas a pagar</CardDescription><CardTitle className="text-base">{registros.contasPagar}</CardTitle></CardHeader></Card>
+        <Card className="bg-slate-50"><CardHeader className="p-4"><CardDescription>Registros de contas a receber</CardDescription><CardTitle className="text-base">{registros.contasReceber}</CardTitle></CardHeader></Card>
       </div>
 
       <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">

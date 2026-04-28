@@ -3,6 +3,7 @@
 import { FechamentoStatus } from "@prisma/client";
 import { z } from "zod";
 
+import { isDemoMode } from "@/lib/env";
 import { prisma } from "@/lib/prisma";
 
 export type CreateFechamentoFormState = {
@@ -48,6 +49,14 @@ export async function createFechamentoAction(
   }
 
   const { competencia, observacoes } = parsed.data;
+
+  if (isDemoMode) {
+    return {
+      errors: {
+        general: ["Modo demonstração ativo: criação real de fechamento está desabilitada."]
+      }
+    };
+  }
   const { start, end } = getMonthRange(competencia);
 
   const existing = await prisma.fechamento.findFirst({

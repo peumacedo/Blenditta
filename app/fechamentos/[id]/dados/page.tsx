@@ -8,9 +8,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   PAGE_SIZE,
-  buildContaPagarWhere,
-  buildContaReceberWhere,
-  buildExtratoWhere,
   getContaFilters,
   getExtratoFilters,
   normalizePage,
@@ -27,7 +24,12 @@ import {
   formatDate,
   situacaoContaLabel
 } from "@/lib/fechamentos";
-import { prisma } from "@/lib/prisma";
+import {
+  getFechamentoById,
+  listContasPagarByFechamento,
+  listContasReceberByFechamento,
+  listExtratosByFechamento
+} from "@/lib/data-source";
 
 function toQueryString(searchParams: SearchParams, updates: Record<string, string | number | undefined>) {
   const params = new URLSearchParams();
@@ -93,74 +95,90 @@ export default async function DadosPage({
   const { id } = await params;
   const query = (await searchParams) ?? {};
 
-  const fechamento = await prisma.fechamento.findUnique({
-    where: { id },
-    select: {
-      id: true,
-      competencia: true,
-      status: true,
-      _count: {
-        select: {
-          extratos: true,
-          contasPagar: true,
-          contasReceber: true
-        }
-      }
-    }
-  });
+  const fechamento = await getFechamentoById(id);
 
   if (!fechamento) {
     notFound();
   }
 
-  const importedTotal =
-    fechamento._count.extratos + fechamento._count.contasPagar + fechamento._count.contasReceber;
-
   const extratoFilters = getExtratoFilters(query);
   const pagarFilters = getContaFilters(query, "cp");
   const receberFilters = getContaFilters(query, "cr");
-
-  const extratoWhere = buildExtratoWhere(fechamento.id, extratoFilters);
-  const pagarWhere = buildContaPagarWhere(fechamento.id, pagarFilters);
-  const receberWhere = buildContaReceberWhere(fechamento.id, receberFilters);
 
   const requestedExtratoPage = parsePage(query, "ex_page");
   const requestedPagarPage = parsePage(query, "cp_page");
   const requestedReceberPage = parsePage(query, "cr_page");
 
-  const [extratoTotal, pagarTotal, receberTotal, extratoSum, pagarSum, receberSum] = await Promise.all([
-    prisma.extratoBancario.count({ where: extratoWhere }),
-    prisma.contaPagar.count({ where: pagarWhere }),
-    prisma.contaReceber.count({ where: receberWhere }),
-    prisma.extratoBancario.aggregate({ where: extratoWhere, _sum: { valor: true } }),
-    prisma.contaPagar.aggregate({ where: pagarWhere, _sum: { valor: true } }),
-    prisma.contaReceber.aggregate({ where: receberWhere, _sum: { valor: true } })
+  const [allExtratos, allContasPagar, allContasReceber] = await Promise.all([
+    listExtratosByFechamento(fechamento.id),
+    listContasPagarByFechamento(fechamento.id),
+    listContasReceberByFechamento(fechamento.id)
   ]);
+
+  const filterText = (value: string, search: string) =>
+    value.toLowerCase().includes(search.toLowerCase());
+
+  const filteredExtratos = allExtratos.filter((item) =>
+    (!extratoFilters.descricao || filterText(item.descricao, extratoFilters.descricao)) &&
+    (!extratoFilters.categoria || filterText(item.categoria, extratoFilters.categoria)) &&
+    (!extratoFilters.dataInicial || item.data >= extratoFilters.dataInicial) &&
+    (!extratoFilters.dataFinal || item.data <= extratoFilters.dataFinal) &&
+    (extratoFilters.valorMin === undefined || item.valor >= extratoFilters.valorMin) &&
+    (extratoFilters.valorMax === undefined || item.valor <= extratoFilters.valorMax)
+  );
+
+  const filteredContasPagar = allContasPagar.filter((item) =>
+    (!pagarFilters.nome || filterText(item.fornecedor, pagarFilters.nome)) &&
+    (!pagarFilters.categoria || filterText(item.categoria, pagarFilters.categoria)) &&
+    (!pagarFilters.situacao || item.situacao === pagarFilters.situacao) &&
+    (!pagarFilters.vencimentoInicial || item.vencimento >= pagarFilters.vencimentoInicial) &&
+    (!pagarFilters.vencimentoFinal || item.vencimento <= pagarFilters.vencimentoFinal) &&
+    (pagarFilters.valorMin === undefined || item.valor >= pagarFilters.valorMin) &&
+    (pagarFilters.valorMax === undefined || item.valor <= pagarFilters.valorMax)
+  );
+
+  const filteredContasReceber = allContasReceber.filter((item) =>
+    (!receberFilters.nome || filterText(item.cliente, receberFilters.nome)) &&
+    (!receberFilters.categoria || filterText(item.categoria, receberFilters.categoria)) &&
+    (!receberFilters.situacao || item.situacao === receberFilters.situacao) &&
+    (!receberFilters.vencimentoInicial || item.vencimento >= receberFilters.vencimentoInicial) &&
+    (!receberFilters.vencimentoFinal || item.vencimento <= receberFilters.vencimentoFinal) &&
+    (receberFilters.valorMin === undefined || item.valor >= receberFilters.valorMin) &&
+    (receberFilters.valorMax === undefined || item.valor <= receberFilters.valorMax)
+  );
+
+  const extratoTotal = filteredExtratos.length;
+  const pagarTotal = filteredContasPagar.length;
+  const receberTotal = filteredContasReceber.length;
 
   const extratoPage = normalizePage(requestedExtratoPage, extratoTotal);
   const pagarPage = normalizePage(requestedPagarPage, pagarTotal);
   const receberPage = normalizePage(requestedReceberPage, receberTotal);
 
-  const [extratos, contasPagar, contasReceber] = await Promise.all([
-    prisma.extratoBancario.findMany({
-      where: extratoWhere,
-      orderBy: [{ data: "desc" }, { id: "desc" }],
-      skip: (extratoPage - 1) * PAGE_SIZE,
-      take: PAGE_SIZE
-    }),
-    prisma.contaPagar.findMany({
-      where: pagarWhere,
-      orderBy: [{ vencimento: "desc" }, { id: "desc" }],
-      skip: (pagarPage - 1) * PAGE_SIZE,
-      take: PAGE_SIZE
-    }),
-    prisma.contaReceber.findMany({
-      where: receberWhere,
-      orderBy: [{ vencimento: "desc" }, { id: "desc" }],
-      skip: (receberPage - 1) * PAGE_SIZE,
-      take: PAGE_SIZE
-    })
-  ]);
+  const extratos = filteredExtratos
+    .slice()
+    .sort((a, b) => b.data.getTime() - a.data.getTime())
+    .slice((extratoPage - 1) * PAGE_SIZE, extratoPage * PAGE_SIZE);
+  const contasPagar = filteredContasPagar
+    .slice()
+    .sort((a, b) => b.vencimento.getTime() - a.vencimento.getTime())
+    .slice((pagarPage - 1) * PAGE_SIZE, pagarPage * PAGE_SIZE);
+  const contasReceber = filteredContasReceber
+    .slice()
+    .sort((a, b) => b.vencimento.getTime() - a.vencimento.getTime())
+    .slice((receberPage - 1) * PAGE_SIZE, receberPage * PAGE_SIZE);
+
+  const extratoSum = { _sum: { valor: filteredExtratos.reduce((acc, item) => acc + item.valor, 0) } };
+  const pagarSum = { _sum: { valor: filteredContasPagar.reduce((acc, item) => acc + item.valor, 0) } };
+  const receberSum = { _sum: { valor: filteredContasReceber.reduce((acc, item) => acc + item.valor, 0) } };
+
+  const importedTotal = allExtratos.length + allContasPagar.length + allContasReceber.length;
+
+  const fechamentoCount = {
+    extratos: allExtratos.length,
+    contasPagar: allContasPagar.length,
+    contasReceber: allContasReceber.length
+  };
 
   const extratoPages = Math.max(1, Math.ceil(extratoTotal / PAGE_SIZE));
   const pagarPages = Math.max(1, Math.ceil(pagarTotal / PAGE_SIZE));
@@ -185,19 +203,19 @@ export default async function DadosPage({
           <Card className="bg-slate-50">
             <CardHeader className="p-4">
               <CardDescription>Extrato bancário</CardDescription>
-              <CardTitle className="text-base">{fechamento._count.extratos} registros</CardTitle>
+              <CardTitle className="text-base">{fechamentoCount.extratos} registros</CardTitle>
             </CardHeader>
           </Card>
           <Card className="bg-slate-50">
             <CardHeader className="p-4">
               <CardDescription>Contas a pagar</CardDescription>
-              <CardTitle className="text-base">{fechamento._count.contasPagar} registros</CardTitle>
+              <CardTitle className="text-base">{fechamentoCount.contasPagar} registros</CardTitle>
             </CardHeader>
           </Card>
           <Card className="bg-slate-50">
             <CardHeader className="p-4">
               <CardDescription>Contas a receber</CardDescription>
-              <CardTitle className="text-base">{fechamento._count.contasReceber} registros</CardTitle>
+              <CardTitle className="text-base">{fechamentoCount.contasReceber} registros</CardTitle>
             </CardHeader>
           </Card>
         </CardContent>

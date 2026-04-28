@@ -25,7 +25,7 @@ function getPageTitle(pathname: string) {
   return routeTitles.find((item) => item.pattern.test(pathname))?.title ?? "Blenditta";
 }
 
-export function AppShell({ children }: { children: ReactNode }) {
+export function AppShell({ children, demoMode = false }: { children: ReactNode; demoMode?: boolean }) {
   const pathname = usePathname();
   const pageTitle = getPageTitle(pathname);
 
@@ -65,8 +65,15 @@ export function AppShell({ children }: { children: ReactNode }) {
               <p className="text-sm text-slate-500">MVP Financeiro</p>
               <p className="text-base font-semibold">{pageTitle}</p>
             </div>
-            <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm text-slate-600">
-              Navegação pronta
+            <div className="flex items-center gap-2">
+              {demoMode ? (
+                <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-1.5 text-sm text-amber-700">
+                  Modo demonstração
+                </div>
+              ) : null}
+              <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm text-slate-600">
+                Navegação pronta
+              </div>
             </div>
           </header>
 
