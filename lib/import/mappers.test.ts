@@ -1,8 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { mapContasPagarRows, mapContasReceberRows, mapExtratoRows, parseDate, parseNumber } from "./mappers";
-import { detectDelimiter, normalizeHeader } from "./parsers";
+import { mapContasPagarRows, mapContasReceberRows, mapExtratoRows, parseDate, parseNumber } from "./mappers.ts";
+import { detectDelimiter, normalizeHeader } from "./parsers.ts";
 
 test("detectDelimiter escolhe ; quando CSV Omie usa ponto e vírgula", () => {
   const csv = 'Data;Cliente ou Fornecedor;Valor (R$)\n01/03/2026;Fornecedor A;1.234,56';

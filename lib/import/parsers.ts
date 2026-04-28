@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
 
-import { type GenericRow, type ParsedFile, type ParsedTable } from "./types";
+import { type GenericRow, type ParsedFile, type ParsedTable } from "./types.ts";
 
 const execFileAsync = promisify(execFile);
 
