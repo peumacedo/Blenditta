@@ -148,6 +148,10 @@ export async function processFechamentoFiles(fechamentoId: string): Promise<{ su
   });
 
   for (const arquivo of importableFiles) {
+    if (!isImportableType(arquivo.tipo)) {
+      continue;
+    }
+
     summary.processedFilesByType[arquivo.tipo] += 1;
 
     try {

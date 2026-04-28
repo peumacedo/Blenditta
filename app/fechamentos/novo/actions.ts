@@ -5,7 +5,7 @@ import { z } from "zod";
 
 import { prisma } from "@/lib/prisma";
 
-type CreateFechamentoFormState = {
+export type CreateFechamentoFormState = {
   errors?: {
     competencia?: string[];
     observacoes?: string[];
