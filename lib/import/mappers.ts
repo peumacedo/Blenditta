@@ -221,6 +221,10 @@ export function mapExtratoRows(rows: GenericRow[], headers: string[]): MapResult
 
   let ignoredByOpeningBalance = 0;
 
+  let invalidDate = 0;
+  let invalidValue = 0;
+  let invalidDescription = 0;
+
   const data = rows.reduce<ExtratoCreateInput[]>((acc, row) => {
     if (isEmptyRow(row)) return acc;
 
@@ -233,6 +237,9 @@ export function mapExtratoRows(rows: GenericRow[], headers: string[]): MapResult
     const parsedValue = parseNumber(getCellValue(row, headerMap.valor));
     const descricao = firstNonEmpty(row, headerMap.descricao, headerMap.observacoes, headerMap.documento, headerMap.tipo_documento);
 
+    if (!parsedDate) invalidDate += 1;
+    if (parsedValue === null) invalidValue += 1;
+    if (!descricao) invalidDescription += 1;
     if (!parsedDate || parsedValue === null || !descricao) {
       return acc;
     }
@@ -251,6 +258,9 @@ export function mapExtratoRows(rows: GenericRow[], headers: string[]): MapResult
   if (ignoredByOpeningBalance > 0) {
     warnings.push(`${ignoredByOpeningBalance} linha(s) de extrato ignorada(s) por saldo inicial/anterior/totalização.`);
   }
+  if (invalidDate > 0) warnings.push(`${invalidDate} linha(s) com data inválida no extrato foram ignoradas.`);
+  if (invalidValue > 0) warnings.push(`${invalidValue} linha(s) com valor inválido no extrato foram ignoradas.`);
+  if (invalidDescription > 0) warnings.push(`${invalidDescription} linha(s) sem descrição no extrato foram ignoradas.`);
 
   const ignoredRows = rows.filter((row) => !isEmptyRow(row)).length - data.length;
 
@@ -266,12 +276,16 @@ export function mapContasPagarRows(rows: GenericRow[], headers: string[]): MapRe
   if (!headerMap.fornecedor) warnings.push("Coluna de fornecedor não encontrada em contas a pagar; valor padrão NAO_INFORMADO aplicado.");
   if (!headerMap.categoria) warnings.push("Coluna de categoria não encontrada em contas a pagar; categoria padrão SEM_CATEGORIA aplicada.");
 
+  let invalidDate = 0;
+  let invalidValue = 0;
   const data = rows.reduce<ContaPagarCreateInput[]>((acc, row) => {
     if (isEmptyRow(row)) return acc;
 
     const vencimento = parseDate(getCellValue(row, headerMap.vencimento));
     const valor = parseNumber(getCellValue(row, headerMap.valor));
 
+    if (!vencimento) invalidDate += 1;
+    if (valor === null) invalidValue += 1;
     if (!vencimento || valor === null) {
       return acc;
     }
@@ -289,6 +303,8 @@ export function mapContasPagarRows(rows: GenericRow[], headers: string[]): MapRe
   }, []);
 
   const ignoredRows = rows.filter((row) => !isEmptyRow(row)).length - data.length;
+  if (invalidDate > 0) warnings.push(`${invalidDate} linha(s) com vencimento inválido em contas a pagar foram ignoradas.`);
+  if (invalidValue > 0) warnings.push(`${invalidValue} linha(s) com valor inválido em contas a pagar foram ignoradas.`);
 
   return { data, ignoredRows: Math.max(0, ignoredRows), warnings: Array.from(new Set(warnings)), unrecognizedColumns };
 }
@@ -302,12 +318,16 @@ export function mapContasReceberRows(rows: GenericRow[], headers: string[]): Map
   if (!headerMap.cliente) warnings.push("Coluna de cliente não encontrada em contas a receber; valor padrão NAO_INFORMADO aplicado.");
   if (!headerMap.categoria) warnings.push("Coluna de categoria não encontrada em contas a receber; categoria padrão SEM_CATEGORIA aplicada.");
 
+  let invalidDate = 0;
+  let invalidValue = 0;
   const data = rows.reduce<ContaReceberCreateInput[]>((acc, row) => {
     if (isEmptyRow(row)) return acc;
 
     const vencimento = parseDate(getCellValue(row, headerMap.vencimento));
     const valor = parseNumber(getCellValue(row, headerMap.valor));
 
+    if (!vencimento) invalidDate += 1;
+    if (valor === null) invalidValue += 1;
     if (!vencimento || valor === null) {
       return acc;
     }
@@ -325,6 +345,8 @@ export function mapContasReceberRows(rows: GenericRow[], headers: string[]): Map
   }, []);
 
   const ignoredRows = rows.filter((row) => !isEmptyRow(row)).length - data.length;
+  if (invalidDate > 0) warnings.push(`${invalidDate} linha(s) com vencimento inválido em contas a receber foram ignoradas.`);
+  if (invalidValue > 0) warnings.push(`${invalidValue} linha(s) com valor inválido em contas a receber foram ignoradas.`);
 
   return { data, ignoredRows: Math.max(0, ignoredRows), warnings: Array.from(new Set(warnings)), unrecognizedColumns };
 }

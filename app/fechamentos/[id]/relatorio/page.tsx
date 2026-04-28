@@ -20,7 +20,7 @@ export default async function RelatorioPage({ params }: { params: Promise<{ id: 
 
   return (
     <div className="space-y-6 report-print-root">
-      <Card className="print:border print:shadow-none">
+      <Card className="border-coffee-200 bg-gradient-to-r from-sand-100 to-card print:border print:shadow-none">
         <CardHeader>
           <CardTitle>Relatório Gerencial Financeiro</CardTitle>
           <CardDescription className="capitalize">
@@ -40,7 +40,7 @@ export default async function RelatorioPage({ params }: { params: Promise<{ id: 
 
       <Card>
         <CardHeader><CardTitle>1. Visão Executiva do Mês</CardTitle></CardHeader>
-        <CardContent className="text-sm text-slate-700">
+        <CardContent className="text-sm text-coffee-900">
           <p>
             O período registrou entradas de {formatCurrency(resumo.entradasRealizadas)} e saídas de {formatCurrency(resumo.saidasRealizadas)},
             com resultado de caixa de {formatCurrency(resumo.resultadoCaixa)} e saldo final de {formatCurrency(resumo.saldoFinal)}.
@@ -201,7 +201,7 @@ export default async function RelatorioPage({ params }: { params: Promise<{ id: 
 
       <Card>
         <CardHeader><CardTitle>12. Conclusão do Fechamento</CardTitle></CardHeader>
-        <CardContent className="text-sm text-slate-700">
+        <CardContent className="text-sm text-coffee-900">
           <p>
             Esta leitura foi construída a partir de dados exportados do ERP. O sistema não realiza conciliação bancária automática e não substitui as validações contábeis formais.
           </p>

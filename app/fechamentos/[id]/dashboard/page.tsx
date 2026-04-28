@@ -3,8 +3,10 @@ import { notFound } from "next/navigation";
 import { CashEvolutionChart } from "@/components/dashboard/cash-evolution-chart";
 import { ClosingStatusCard } from "@/components/dashboard/closing-status-card";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
+import { DashboardFilters } from "@/components/dashboard/dashboard-filters";
 import { DiagnosticSection } from "@/components/dashboard/diagnostic-section";
 import { DreTable } from "@/components/dashboard/dre-table";
+import { DreCompositionChart } from "@/components/dashboard/dre-composition-chart";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { ExecutiveReadingCard } from "@/components/dashboard/executive-reading-card";
 import { ExpensesSection } from "@/components/dashboard/expenses-section";
@@ -16,6 +18,7 @@ import { RevenueSection } from "@/components/dashboard/revenue-section";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatCompetencia } from "@/lib/fechamentos";
 import { getDashboardViewModel } from "@/lib/dashboard-view-model";
+import { isDemoMode } from "@/lib/env";
 
 export default async function DashboardPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -38,7 +41,28 @@ export default async function DashboardPage({ params }: { params: Promise<{ id: 
 
   return (
     <div className="space-y-6">
-      <DashboardHeader fechamentoId={id} competencia={analise.fechamento.competencia} />
+      <DashboardHeader
+        fechamentoId={id}
+        competencia={analise.fechamento.competencia}
+        empresa="Blenditta"
+        status={analise.fechamento.status}
+        geradoEm={new Date()}
+        demoMode={isDemoMode}
+      />
+
+      <DashboardFilters
+        competencias={vm.historico.map((item) => ({ label: formatCompetencia(item.competencia), value: item.competencia.toISOString() }))}
+        categorias={[...new Set([...vm.receitasRanking.map((item) => item.categoria), ...vm.despesasRanking.map((item) => item.categoria)])].map((item) => ({ label: item, value: item }))}
+        tipos={[
+          { label: "Entrada", value: "entrada" },
+          { label: "Saída", value: "saida" }
+        ]}
+        status={[
+          { label: "Concluído", value: "Concluído" },
+          { label: "Em andamento", value: "Em andamento" },
+          { label: "Pendente", value: "Pendente" }
+        ]}
+      />
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {vm.kpis.map((item) => <KpiCard key={item.key} item={item} />)}
@@ -51,6 +75,12 @@ export default async function DashboardPage({ params }: { params: Promise<{ id: 
       {vm.historico.length >= 2 ? <CashEvolutionChart historico={vm.historico} /> : <EmptyState title="Sem histórico suficiente" description="Dados históricos insuficientes para comparação." />}
 
       <DreTable rows={vm.dreLinhas} />
+      <DreCompositionChart
+        receitaBruta={analise.resultadoGerencial.receitaBruta}
+        custosVariaveis={analise.resultadoGerencial.custosVariaveis}
+        despesasFixas={analise.resultadoGerencial.despesasFixas}
+        impostosTaxas={analise.resultadoGerencial.impostosTaxas}
+      />
 
       <div className="grid gap-6 lg:grid-cols-2">
         {vm.receitasRanking.length ? <RevenueSection items={vm.receitasRanking} /> : <EmptyState title="Sem receitas" description="Não há receitas classificadas nesta competência." />}
