@@ -2,13 +2,56 @@
 
 Aplicação web do MVP de fechamento financeiro mensal da Blenditta, construída com Next.js (App Router), TypeScript, Tailwind, shadcn/ui, Prisma e PostgreSQL.
 
-## Requisitos
+## Modos de execução
+
+A aplicação agora suporta dois modos:
+
+- **Modo demonstração (sem banco):** usa dados simulados em memória para navegação completa.
+- **Modo real (com banco):** usa Prisma + PostgreSQL para persistência real.
+
+---
+
+## Modo demonstração (sem banco)
+
+Fluxo recomendado para validar visual, navegação e experiência sem infraestrutura:
+
+1. Instale dependências:
+
+   ```bash
+   npm install
+   ```
+
+2. Crie o `.env` com a flag demo:
+
+   ```bash
+   cp .env.example .env
+   ```
+
+   E configure:
+
+   ```bash
+   DEMO_MODE=true
+   ```
+
+3. Rode a aplicação:
+
+   ```bash
+   npm run dev
+   ```
+
+> Neste modo, uploads/processamentos e criação de fechamento ficam sinalizados como demonstração e não persistem dados reais.
+
+---
+
+## Modo real (com banco)
+
+### Requisitos
 
 - Node.js 20+
 - Docker + Docker Compose
 - npm
 
-## Setup local
+### Setup local
 
 1. Copie as variáveis de ambiente:
 
@@ -16,19 +59,25 @@ Aplicação web do MVP de fechamento financeiro mensal da Blenditta, construída
    cp .env.example .env
    ```
 
-2. Suba o banco PostgreSQL:
+2. Ajuste no `.env`:
+
+   ```bash
+   DEMO_MODE=false
+   ```
+
+3. Suba o banco PostgreSQL:
 
    ```bash
    docker compose up -d
    ```
 
-3. Instale as dependências:
+4. Instale as dependências:
 
    ```bash
    npm install
    ```
 
-## Prisma e banco de dados
+### Prisma e banco de dados
 
 1. Gere o Prisma Client:
 
@@ -54,9 +103,9 @@ Aplicação web do MVP de fechamento financeiro mensal da Blenditta, construída
    npm run prisma:studio
    ```
 
-## Executar aplicação
+### Executar aplicação
 
-Ambiente de desenvolvimento:
+Desenvolvimento:
 
 ```bash
 npm run dev
@@ -80,26 +129,6 @@ npm run start
 - `npm run prisma:migrate:deploy`: aplica migrations existentes
 - `npm run prisma:seed`: executa seed do banco
 - `npm run prisma:studio`: abre Prisma Studio
-
-## Escopo entregue no MVP atual
-
-- Fundação do projeto
-- Prisma + seed
-- Navegação principal
-- Listagem de fechamentos
-- Detalhe do fechamento
-- Criação de novo fechamento
-- Upload de arquivos em `/fechamentos/[id]/upload` com armazenamento local e catálogo na tabela `Arquivo`
-- Processamento de arquivos CSV/Excel em `/fechamentos/[id]/upload` para importar em:
-  - `ExtratoBancario`
-  - `ContaPagar`
-  - `ContaReceber`
-- Rotas ainda em evolução:
-  - `/fechamentos/[id]/dados`
-  - `/fechamentos/[id]/conciliacao`
-  - `/fechamentos/[id]/dashboard`
-  - `/fechamentos/[id]/auditoria`
-  - `/fechamentos/[id]/relatorio`
 
 ## Premissa funcional do MVP
 

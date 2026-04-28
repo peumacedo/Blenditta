@@ -13,7 +13,9 @@ import {
   formatDateTime
 } from "@/lib/fechamentos";
 import { getAnaliseGerencial } from "@/lib/analise-gerencial";
-import { prisma } from "@/lib/prisma";
+import {
+  getFechamentoById
+} from "@/lib/data-source";
 
 export default async function FechamentoDetailPage({
   params
@@ -22,14 +24,7 @@ export default async function FechamentoDetailPage({
 }) {
   const { id } = await params;
 
-  const fechamento = await prisma.fechamento.findUnique({
-    where: { id },
-    include: {
-      extratos: true,
-      contasPagar: true,
-      contasReceber: true
-    }
-  });
+  const fechamento = await getFechamentoById(id);
 
   if (!fechamento) {
     notFound();

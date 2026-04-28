@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { AppShell } from "@/components/layout/app-shell";
+import { isDemoMode } from "@/lib/env";
 
 import "./globals.css";
 
@@ -17,7 +18,7 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <body className="antialiased">
-        <AppShell>{children}</AppShell>
+        <AppShell demoMode={isDemoMode}>{children}</AppShell>
       </body>
     </html>
   );

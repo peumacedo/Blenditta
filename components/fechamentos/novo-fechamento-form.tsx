@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 
 const initialState: CreateFechamentoFormState = {};
 
-export function NovoFechamentoForm() {
+export function NovoFechamentoForm({ demoMode = false }: { demoMode?: boolean }) {
   const router = useRouter();
   const [state, formAction, isPending] = useActionState(createFechamentoAction, initialState);
 
@@ -64,6 +64,12 @@ export function NovoFechamentoForm() {
         </p>
       ))}
 
+      {demoMode ? (
+        <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
+          Modo demonstração ativo: esta etapa está disponível apenas para navegação visual.
+        </p>
+      ) : null}
+
       {state?.successMessage ? (
         <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
           {state.successMessage}
@@ -71,8 +77,8 @@ export function NovoFechamentoForm() {
       ) : null}
 
       <div className="flex items-center gap-3">
-        <Button type="submit" disabled={isPending}>
-          {isPending ? "Criando..." : "Criar fechamento"}
+        <Button type="submit" disabled={isPending || demoMode}>
+          {demoMode ? "Criação desabilitada no modo demo" : isPending ? "Criando..." : "Criar fechamento"}
         </Button>
         <Link href="/fechamentos" className="text-sm text-slate-600 underline-offset-4 hover:underline">
           Cancelar

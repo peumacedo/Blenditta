@@ -5,6 +5,7 @@ import { z } from "zod";
 
 import { processFechamentoFiles } from "@/lib/import/process-fechamento-files";
 import { type ImportSummary } from "@/lib/import/types";
+import { isDemoMode } from "@/lib/env";
 import { prisma } from "@/lib/prisma";
 import {
   MAX_UPLOAD_SIZE_BYTES,
@@ -47,6 +48,11 @@ export async function uploadArquivoAction(
   }
 
   const { file, tipo } = parsed.data;
+
+  if (isDemoMode) {
+    return { successMessage: "Modo demonstração: upload simulado. Nenhum arquivo foi salvo." };
+  }
+
 
   if (file.size === 0) {
     return { errorMessage: "Não é possível enviar um arquivo vazio." };
@@ -106,6 +112,10 @@ export async function deleteArquivoAction(
   prevState: DeleteActionState
 ): Promise<DeleteActionState> {
   void prevState;
+
+  if (isDemoMode) {
+    return { successMessage: "Modo demonstração: exclusão simulada." };
+  }
   const arquivo = await prisma.arquivo.findFirst({
     where: {
       id: arquivoId,
@@ -149,6 +159,11 @@ export async function processArquivosAction(
   prevState: ProcessActionState
 ): Promise<ProcessActionState> {
   void prevState;
+
+  if (isDemoMode) {
+    return { successMessage: "Modo demonstração: processamento simulado." };
+  }
+
   const fechamento = await prisma.fechamento.findUnique({
     where: { id: fechamentoId },
     select: { id: true }
