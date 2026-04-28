@@ -10,8 +10,9 @@ import { formatCategoryLabel, formatCompetencia, formatCurrency, formatDate } fr
 
 const percent = (value: number) => `${(value * 100).toFixed(1)}%`;
 
-export default async function DashboardPage({ params }: { params: { id: string } }) {
-  const analise = await getAnaliseGerencial(params.id);
+export default async function DashboardPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const analise = await getAnaliseGerencial(id);
 
   if (!analise) {
     notFound();
@@ -33,10 +34,10 @@ export default async function DashboardPage({ params }: { params: { id: string }
             </CardDescription>
           </div>
           <div className="flex gap-2">
-            <Link href={`/fechamentos/${params.id}`} className={buttonVariants({ variant: "outline" })}>
+            <Link href={`/fechamentos/${id}`} className={buttonVariants({ variant: "outline" })}>
               Voltar ao fechamento
             </Link>
-            <Link href={`/fechamentos/${params.id}/relatorio`} className={buttonVariants({ variant: "default" })}>
+            <Link href={`/fechamentos/${id}/relatorio`} className={buttonVariants({ variant: "default" })}>
               Ver relatório
             </Link>
           </div>

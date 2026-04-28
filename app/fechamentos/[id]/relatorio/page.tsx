@@ -8,8 +8,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { getAnaliseGerencial } from "@/lib/analise-gerencial";
 import { formatCategoryLabel, formatCompetencia, formatCurrency, formatDate } from "@/lib/fechamentos";
 
-export default async function RelatorioPage({ params }: { params: { id: string } }) {
-  const analise = await getAnaliseGerencial(params.id);
+export default async function RelatorioPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const analise = await getAnaliseGerencial(id);
 
   if (!analise) {
     notFound();
@@ -26,10 +27,10 @@ export default async function RelatorioPage({ params }: { params: { id: string }
             {formatCompetencia(analise.fechamento.competencia)} · Entrega mensal gerada a partir das bases exportadas do ERP.
           </CardDescription>
           <div className="flex flex-wrap gap-2 no-print">
-            <Link href={`/fechamentos/${params.id}`} className={buttonVariants({ variant: "outline" })}>
+            <Link href={`/fechamentos/${id}`} className={buttonVariants({ variant: "outline" })}>
               Voltar ao fechamento
             </Link>
-            <Link href={`/fechamentos/${params.id}/dashboard`} className={buttonVariants({ variant: "outline" })}>
+            <Link href={`/fechamentos/${id}/dashboard`} className={buttonVariants({ variant: "outline" })}>
               Ver dashboard
             </Link>
             <PrintReportButton />

@@ -15,7 +15,7 @@ const routeTitles: Array<{ pattern: RegExp; title: string }> = [
   { pattern: /^\/fechamentos\/[^/]+$/, title: "Detalhe do fechamento" },
   { pattern: /^\/fechamentos\/[^/]+\/upload$/, title: "Upload de arquivos" },
   { pattern: /^\/fechamentos\/[^/]+\/dados$/, title: "Dados do fechamento" },
-  { pattern: /^\/fechamentos\/[^/]+\/conciliacao$/, title: "Conciliação" },
+  { pattern: /^\/fechamentos\/[^/]+\/conciliacao$/, title: "Validação das Bases" },
   { pattern: /^\/fechamentos\/[^/]+\/dashboard$/, title: "Dashboard" },
   { pattern: /^\/fechamentos\/[^/]+\/auditoria$/, title: "Auditoria" },
   { pattern: /^\/fechamentos\/[^/]+\/relatorio$/, title: "Relatório" }

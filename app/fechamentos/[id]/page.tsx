@@ -12,22 +12,22 @@ import {
   formatCurrency,
   formatDateTime
 } from "@/lib/fechamentos";
+import { getAnaliseGerencial } from "@/lib/analise-gerencial";
 import { prisma } from "@/lib/prisma";
 
 export default async function FechamentoDetailPage({
   params
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  const { id } = params;
+  const { id } = await params;
 
   const fechamento = await prisma.fechamento.findUnique({
     where: { id },
     include: {
       extratos: true,
       contasPagar: true,
-      contasReceber: true,
-      inconsistencias: true
+      contasReceber: true
     }
   });
 
@@ -35,9 +35,11 @@ export default async function FechamentoDetailPage({
     notFound();
   }
 
-  const totalExtrato = fechamento.extratos.reduce((acc, item) => acc + Number(item.valor), 0);
-  const totalPagar = fechamento.contasPagar.reduce((acc, item) => acc + Number(item.valor), 0);
-  const totalReceber = fechamento.contasReceber.reduce((acc, item) => acc + Number(item.valor), 0);
+  const analise = await getAnaliseGerencial(id);
+
+  if (!analise) {
+    notFound();
+  }
 
   return (
     <div className="space-y-6">
@@ -61,26 +63,26 @@ export default async function FechamentoDetailPage({
         <CardContent className="grid gap-4 md:grid-cols-4">
           <Card className="bg-slate-50">
             <CardHeader className="p-4">
-              <CardDescription>Movimentação em extrato</CardDescription>
-              <CardTitle className="text-base">{formatCurrency(totalExtrato)}</CardTitle>
+              <CardDescription>Entradas realizadas</CardDescription>
+              <CardTitle className="text-base">{formatCurrency(analise.resumoExecutivo.entradasRealizadas)}</CardTitle>
             </CardHeader>
           </Card>
           <Card className="bg-slate-50">
             <CardHeader className="p-4">
-              <CardDescription>Contas a pagar</CardDescription>
-              <CardTitle className="text-base">{formatCurrency(totalPagar)}</CardTitle>
+              <CardDescription>Saídas realizadas</CardDescription>
+              <CardTitle className="text-base">{formatCurrency(analise.resumoExecutivo.saidasRealizadas)}</CardTitle>
             </CardHeader>
           </Card>
           <Card className="bg-slate-50">
             <CardHeader className="p-4">
-              <CardDescription>Contas a receber</CardDescription>
-              <CardTitle className="text-base">{formatCurrency(totalReceber)}</CardTitle>
+              <CardDescription>Contas a pagar em aberto</CardDescription>
+              <CardTitle className="text-base">{formatCurrency(analise.resumoExecutivo.contasAPagarAbertas)}</CardTitle>
             </CardHeader>
           </Card>
           <Card className="bg-slate-50">
             <CardHeader className="p-4">
-              <CardDescription>Inconsistências</CardDescription>
-              <CardTitle className="text-base">{fechamento.inconsistencias.length}</CardTitle>
+              <CardDescription>Contas a receber em aberto</CardDescription>
+              <CardTitle className="text-base">{formatCurrency(analise.resumoExecutivo.contasAReceberAbertas)}</CardTitle>
             </CardHeader>
           </Card>
         </CardContent>

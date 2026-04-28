@@ -87,11 +87,11 @@ export default async function DadosPage({
   params,
   searchParams
 }: {
-  params: { id: string };
-  searchParams?: SearchParams;
+  params: Promise<{ id: string }>;
+  searchParams?: Promise<SearchParams>;
 }) {
-  const { id } = params;
-  const query = searchParams ?? {};
+  const { id } = await params;
+  const query = (await searchParams) ?? {};
 
   const fechamento = await prisma.fechamento.findUnique({
     where: { id },

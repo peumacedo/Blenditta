@@ -8,15 +8,16 @@ import { getAnaliseGerencial } from "@/lib/analise-gerencial";
 import { formatCompetencia, formatCurrency } from "@/lib/fechamentos";
 import { prisma } from "@/lib/prisma";
 
-export default async function ConciliacaoPage({ params }: { params: { id: string } }) {
-  const analise = await getAnaliseGerencial(params.id);
+export default async function ConciliacaoPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const analise = await getAnaliseGerencial(id);
 
   if (!analise) {
     notFound();
   }
 
   const registros = await prisma.fechamento.findUnique({
-    where: { id: params.id },
+    where: { id },
     select: {
       _count: {
         select: {
@@ -61,7 +62,7 @@ export default async function ConciliacaoPage({ params }: { params: { id: string
               {formatCompetencia(analise.fechamento.competencia)} · Conferência estrutural dos arquivos importados do ERP
             </CardDescription>
           </div>
-          <Link href={`/fechamentos/${params.id}`} className={buttonVariants({ variant: "outline" })}>
+          <Link href={`/fechamentos/${id}`} className={buttonVariants({ variant: "outline" })}>
             Voltar ao fechamento
           </Link>
         </CardHeader>

@@ -4,10 +4,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect } from "react";
 
-import { createFechamentoAction } from "@/app/fechamentos/novo/actions";
+import { createFechamentoAction, type CreateFechamentoFormState } from "@/app/fechamentos/novo/actions";
 import { Button } from "@/components/ui/button";
 
-const initialState = {};
+const initialState: CreateFechamentoFormState = {};
 
 export function NovoFechamentoForm() {
   const router = useRouter();

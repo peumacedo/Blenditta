@@ -8,8 +8,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { fechamentoStatusColor, fechamentoStatusLabel, formatCompetencia } from "@/lib/fechamentos";
 import { prisma } from "@/lib/prisma";
 
-export default async function UploadPage({ params }: { params: { id: string } }) {
-  const { id } = params;
+export default async function UploadPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
 
   const fechamento = await prisma.fechamento.findUnique({
     where: { id },

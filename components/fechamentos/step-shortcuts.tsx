@@ -7,7 +7,7 @@ const steps = [
   { slug: "dados", title: "Dados", description: "Conferência de extratos e lançamentos" },
   { slug: "conciliacao", title: "Validação das bases", description: "Conferência dos arquivos exportados do ERP" },
   { slug: "dashboard", title: "Dashboard", description: "Visão executiva do fechamento" },
-  { slug: "auditoria", title: "Auditoria", description: "Rastreabilidade e histórico" },
+  { slug: "auditoria", title: "Auditoria", description: "Etapa futura de rastreabilidade" },
   { slug: "relatorio", title: "Relatório", description: "Consolidação final para exportação" }
 ];
 
